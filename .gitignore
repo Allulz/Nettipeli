@@ -46,3 +46,6 @@ Debug/Nettipeli.log
 *.tlog
 Debug/vc120.idb
 *.pdb
+*.exe
+Debug/Nettipeli.ilk
+*.txt
