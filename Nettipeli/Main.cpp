@@ -41,6 +41,8 @@ int main(int argc, char* args[])
 			//Event handler
 			SDL_Event sdlEvent;
 
+			uint8_t* keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
+
 			Sprite sprt;
 
 			SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
@@ -52,6 +54,8 @@ int main(int argc, char* args[])
 			dRect.w = 128.f;
 			dRect.h = 128.f;
 			sprt.setBounds(dRect);
+			sprt.setOrigin(64.f, 64.f);
+			sprt.setRotation(45.f);
 
 			float posX = 10.f, posY = 10.f;
 
@@ -62,28 +66,22 @@ int main(int argc, char* args[])
 					if (sdlEvent.type == SDL_QUIT)
 						quitProgram = true;
 
-					else if (sdlEvent.type == SDL_KEYDOWN)
-					{
-						switch (sdlEvent.key.keysym.sym)
-						{
-						case SDLK_ESCAPE:
-							quitProgram = true;
-							break;
-						case SDLK_w:
-							posY -= 10.f;
-							break;
-						case SDLK_a:
-							posX -= 10.f;
-							break;
-						case SDLK_s:
-							posY += 10.f;
-							break;
-						case SDLK_d:
-							posX += 10.f;
-							break;
-						}
-					}
+					if (sdlEvent.type == SDL_KEYDOWN || sdlEvent.type == SDL_KEYUP)
+						keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
 				}
+
+				if (keyState[SDL_SCANCODE_ESCAPE])
+					quitProgram = true;
+
+				if (keyState[SDL_SCANCODE_W])
+					posY -= 1.f;
+				if (keyState[SDL_SCANCODE_A])
+					posX -= 1.f;
+				if (keyState[SDL_SCANCODE_S])
+					posY += 1.f;
+				if (keyState[SDL_SCANCODE_D])
+					posX += 1.f;
+
 				sprt.setPosition(posX, posY);
 
 				//Clear screen

@@ -31,6 +31,16 @@ public:
 	void setBounds(SDL_Rect boundsToSet);
 
 	/**
+	Sets the rotation angle of the sprite.
+	*/
+	void setRotation(float angle);
+
+	/**
+	Sets the origin of the sprite.
+	*/
+	void setOrigin(float x, float y);
+
+	/**
 	Draws the sprite to the given SDL renderer.
 	*/
 	void draw(SDL_Renderer* sdlRenderer);
@@ -38,6 +48,8 @@ public:
 private:
 	SDL_Texture* texture;
 	SDL_Rect boundsRectangle;
+	SDL_Point origin;
+	float rotationAngle;
 
 	SDL_Surface* loadImage(std::string pathToImage);
 };

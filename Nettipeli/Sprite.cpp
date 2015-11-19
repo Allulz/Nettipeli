@@ -5,10 +5,14 @@ Sprite::Sprite()
 {
 	texture = nullptr;
 
-	boundsRectangle.x = 0;
-	boundsRectangle.y = 0;
-	boundsRectangle.w = 0;
-	boundsRectangle.h = 0;
+	rotationAngle = 0.f;
+	origin.x = 0.f;
+	origin.y = 0.f;
+
+	boundsRectangle.x = 0.f;
+	boundsRectangle.y = 0.f;
+	boundsRectangle.w = 0.f;
+	boundsRectangle.h = 0.f;
 }
 
 
@@ -59,9 +63,20 @@ void Sprite::setBounds(SDL_Rect boundsToSet)
 	boundsRectangle = boundsToSet;
 }
 
+void Sprite::setRotation(float angle)
+{
+	rotationAngle = angle;
+}
+
+void Sprite::setOrigin(float x, float y)
+{
+	origin.x = x;
+	origin.y = y;
+}
+
 void Sprite::draw(SDL_Renderer* renderer)
 {
-	SDL_RenderCopy(renderer, texture, NULL, &boundsRectangle);
+	SDL_RenderCopyEx(renderer, texture, NULL, &boundsRectangle, rotationAngle, &origin, SDL_FLIP_NONE);
 }
 
 //Private
