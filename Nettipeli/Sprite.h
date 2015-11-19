@@ -41,6 +41,16 @@ public:
 	void setOrigin(float x, float y);
 
 	/**
+	Get current sprite position.
+	*/
+	SDL_Point getPosition();
+
+	/**
+	Get current sprite origin.
+	*/
+	SDL_Point getOrigin();
+
+	/**
 	Draws the sprite to the given SDL renderer.
 	*/
 	void draw(SDL_Renderer* sdlRenderer);

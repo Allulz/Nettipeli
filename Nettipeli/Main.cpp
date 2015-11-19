@@ -1,6 +1,7 @@
 #include "Sprite.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 
 bool initializeSDL();
@@ -44,6 +45,8 @@ int main(int argc, char* args[])
 			uint8_t* keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
 
 			Sprite sprt;
+			int mouseX = 0, mouseY = 0;
+			const float PI = 3.14159265;
 
 			SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
 			sprt.loadTexture(renderer, "sprite.bmp");
@@ -55,7 +58,6 @@ int main(int argc, char* args[])
 			dRect.h = 128.f;
 			sprt.setBounds(dRect);
 			sprt.setOrigin(64.f, 64.f);
-			sprt.setRotation(45.f);
 
 			float posX = 10.f, posY = 10.f;
 
@@ -68,7 +70,16 @@ int main(int argc, char* args[])
 
 					if (sdlEvent.type == SDL_KEYDOWN || sdlEvent.type == SDL_KEYUP)
 						keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
+
+					if (sdlEvent.type == SDL_MOUSEMOTION)
+						SDL_GetMouseState(&mouseX, &mouseY);
 				}
+
+
+				float angle = std::atan2(((double)mouseY - (posY+sprt.getOrigin().y)), ((double)mouseX - (posX+sprt.getOrigin().x)));
+				angle *= (180 / PI);
+				sprt.setRotation(angle);
+
 
 				if (keyState[SDL_SCANCODE_ESCAPE])
 					quitProgram = true;

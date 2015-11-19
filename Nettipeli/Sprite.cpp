@@ -74,6 +74,19 @@ void Sprite::setOrigin(float x, float y)
 	origin.y = y;
 }
 
+SDL_Point Sprite::getPosition()
+{
+	SDL_Point posToReturn;
+	posToReturn.x = boundsRectangle.x;
+	posToReturn.y = boundsRectangle.y;
+	return posToReturn;
+}
+
+SDL_Point Sprite::getOrigin()
+{
+	return origin;
+}
+
 void Sprite::draw(SDL_Renderer* renderer)
 {
 	SDL_RenderCopyEx(renderer, texture, NULL, &boundsRectangle, rotationAngle, &origin, SDL_FLIP_NONE);
