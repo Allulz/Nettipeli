@@ -44,20 +44,22 @@ int main(int argc, char* args[])
 
 			uint8_t* keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
 
+			Texture txtr;
 			Sprite sprt;
 			int mouseX = 0, mouseY = 0;
 			const float PI = 3.14159265;
 
 			SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
-			sprt.loadTexture(renderer, "sprite.bmp");
+			txtr.loadImage(renderer, "groundtx.png");
+			sprt.setTexture(txtr);
 
 			SDL_Rect dRect;
 			dRect.x = 10.f;
 			dRect.y = 10.f;
-			dRect.w = 128.f;
-			dRect.h = 128.f;
+			dRect.w = 256.f;
+			dRect.h = 256.f;
 			sprt.setBounds(dRect);
-			sprt.setOrigin(64.f, 64.f);
+			sprt.setOrigin(128.f, 128.f);
 
 			float posX = 10.f, posY = 10.f;
 

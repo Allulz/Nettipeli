@@ -1,7 +1,6 @@
 #pragma once
 
-#include <SDL.h>
-#include <string>
+#include "Texture.h"
 
 class Sprite
 {
@@ -10,10 +9,9 @@ public:
 	~Sprite();
 
 	/**
-	Loads a texture from given path.
-	Returns false if unsuccessful
+	Sets the given texture to the sprite.
 	*/
-	bool loadTexture(SDL_Renderer* sdlRenderer, std::string pathToImage);
+	void setTexture(Texture textureToSet);
 
 	/**
 	Sets the position of the sprite.
@@ -56,10 +54,8 @@ public:
 	void draw(SDL_Renderer* sdlRenderer);
 
 private:
-	SDL_Texture* texture;
+	Texture texture;
 	SDL_Rect boundsRectangle;
 	SDL_Point origin;
 	float rotationAngle;
-
-	SDL_Surface* loadImage(std::string pathToImage);
 };
