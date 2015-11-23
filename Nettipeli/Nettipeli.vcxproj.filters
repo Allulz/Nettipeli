@@ -30,6 +30,9 @@
     <ClCompile Include="..\lodepng\lodepng.cpp">
       <Filter>lodepng</Filter>
     </ClCompile>
+    <ClCompile Include="Connection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="sprite.bmp">
@@ -48,6 +51,9 @@
     </ClInclude>
     <ClInclude Include="..\lodepng\lodepng.h">
       <Filter>lodepng</Filter>
+    </ClInclude>
+    <ClInclude Include="Connection.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

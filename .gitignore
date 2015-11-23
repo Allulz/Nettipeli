@@ -49,3 +49,10 @@ Debug/vc120.idb
 *.exe
 Debug/Nettipeli.ilk
 *.txt
+*.ilk
+*.log
+Nettiservu/Nettiservu/Debug/vc120.idb
+*.opensdf
+Nettipeli.sdf
+*.sdf
+*.sdf

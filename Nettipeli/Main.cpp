@@ -1,8 +1,8 @@
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "Sprite.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
+#include "Connection.h"
 
 bool initializeSDL();
 
@@ -12,6 +12,15 @@ SDL_Renderer* createRenderer(SDL_Window* sdlWindow);
 
 int main(int argc, char* args[])
 {
+	int iResult;
+	Connection connection;
+	iResult = connection.initConnection();
+	if (iResult != 0)
+	{
+		printf("Failed to initialize server connection!\n");
+		//Wait for 4s
+		SDL_Delay(4000);
+	}
 	//The window we'll be rendering to
 	SDL_Window* window = nullptr;
 	//Renderer
