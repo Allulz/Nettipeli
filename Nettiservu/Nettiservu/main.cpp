@@ -21,6 +21,16 @@
 std::map<int, SOCKET *> activeClients;
 std::mutex socketlistmtx;
 
+char buf[DEFAULT_BUFLEN];
+
+WSADATA wsaData;
+
+int recv_len;
+struct addrinfo *result = NULL;
+struct addrinfo hints;
+int slen = sizeof(hints);
+
+
 
 int displayPortAndIP()
 {
@@ -51,10 +61,7 @@ int displayPortAndIP()
 
 int initServer(SOCKET* ListenSocket)
 {
-	WSADATA wsaData;
-
-	struct addrinfo *result = NULL;
-	struct addrinfo hints;
+	
 
 	int iResult;
 
@@ -243,6 +250,33 @@ int __cdecl main(void)
 		closesocket(ClientSocket);
 		WSACleanup();
 		return 1;
+	}
+
+	while (1)
+	{
+		
+		fflush(stdout);
+
+		
+		memset(buf, '\0', DEFAULT_BUFLEN);
+
+		
+		if ((recv_len = recvfrom(ClientSocket, buf, DEFAULT_BUFLEN, 0, (struct sockaddr *) &hints, &slen)) == SOCKET_ERROR)
+		{
+			printf("recvfrom() failed with error code : %d", WSAGetLastError());
+			exit(EXIT_FAILURE);
+		}
+
+		
+		//printf("Received packet from %s:%d\n", inet_ntoa(hints.ai_addr), ntohs(hints.ai_protocol));                  ei k‰‰nny.... pistin kommentteihin kuin pomo
+		printf("Data: %s\n", buf);
+
+		//now reply the client with the same data
+		if (sendto(ClientSocket, buf, recv_len, 0, (struct sockaddr*) &hints, slen) == SOCKET_ERROR)
+		{
+			printf("sendto() failed with error code : %d", WSAGetLastError());
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	// cleanup

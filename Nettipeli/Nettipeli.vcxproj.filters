@@ -33,6 +33,9 @@
     <ClCompile Include="Connection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NetworkData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="sprite.bmp">
@@ -53,6 +56,9 @@
       <Filter>lodepng</Filter>
     </ClInclude>
     <ClInclude Include="Connection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

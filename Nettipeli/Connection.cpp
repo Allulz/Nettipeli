@@ -10,6 +10,25 @@ Connection::~Connection()
 {
 }
 
+void Connection::sendUDP()
+{
+	//send the message
+	if (sendto(connectSocket, message, strlen(message), 0, (struct sockaddr *) &hints, slen) == SOCKET_ERROR)
+	{
+		printf("sendto() failed with error code : %d", WSAGetLastError());
+		exit(EXIT_FAILURE);
+	}
+	memset(buf, '\0', DEFAULT_BUFLEN);
+
+	if (recvfrom(connectSocket, buf, DEFAULT_BUFLEN, 0, (struct sockaddr *) &hints, &slen) == SOCKET_ERROR)
+	{
+		printf("recvfrom() failed with error code : %d", WSAGetLastError());
+		exit(EXIT_FAILURE);
+	}
+
+	puts(buf);
+}
+
 int Connection::initConnection()
 {
 	int iResult;

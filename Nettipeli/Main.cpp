@@ -3,6 +3,8 @@
 
 #include "Sprite.h"
 #include "Connection.h"
+#include "NetworkData.h"
+#include <stdio.h>
 
 bool initializeSDL();
 
@@ -104,7 +106,14 @@ int main(int argc, char* args[])
 				if (keyState[SDL_SCANCODE_D])
 					posX += 1.f;
 
+				Connection data;
+				strcpy(data.message, "pippeli");
+				void sendUDP();
+
 				sprt.setPosition(posX, posY);
+
+
+				
 
 				//Clear screen
 				SDL_RenderClear(renderer);
@@ -117,6 +126,7 @@ int main(int argc, char* args[])
 			}
 		}
 	}
+		
 
 		//Destroy window
 		SDL_DestroyWindow(window);
