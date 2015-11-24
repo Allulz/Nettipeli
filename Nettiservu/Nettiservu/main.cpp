@@ -10,6 +10,7 @@
 #include <mutex>
 #include <map>
 #include <string>
+#include <sstream>
 
 
 #define DEFAULT_BUFLEN 512
@@ -19,7 +20,6 @@
 
 std::map<int, SOCKET *> activeClients;
 std::mutex socketlistmtx;
-struct sockaddr_in addr, foo;
 
 
 int displayPortAndIP()
@@ -110,24 +110,14 @@ int initServer(SOCKET* ListenSocket)
 	return 0;
 }
 
-void GetSockIP()
+std::string getSockPortAndIP(SOCKET* sock)
 {
-	int sock = 0;
-	int len = sizeof(struct sockaddr);
-	char* IP_id = 0;
-	
-	memset(&addr, 0, sizeof(struct sockaddr_in));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr(IP_id);
-	addr.sin_port = htons(0);
-
-	if (getsockname(sock, (struct sockaddr*)&addr, &len) == SOCKET_ERROR)
-	{
-		WSAGetLastError();
-	}
-
-	else 
-		getsockname(sock, (struct sockaddr *) &foo, &len);
+	std::ostringstream sockPortIPStream;
+	sockaddr_in sockInfo;
+	int sockInfoSize = sizeof(sockInfo);
+	getpeername(*sock, (sockaddr*)&sockInfo, &sockInfoSize);
+	sockPortIPStream << inet_ntoa(sockInfo.sin_addr) << ":" << ntohs(sockInfo.sin_port);
+	return sockPortIPStream.str();
 }
 
 void AddActiveSocket(int clientID, SOCKET *s) {
@@ -231,11 +221,12 @@ int __cdecl main(void)
 		
 		AddActiveSocket(connectionNumber, &ClientSocket);
 
-		GetSockIP();
+		std::string clientIPPort = getSockPortAndIP(&ClientSocket);
 
-		printf("Accepted connection #%i!\nIP: %s:%d\n", connectionNumber, inet_ntoa(foo.sin_addr), ntohs(foo.sin_port));
+		printf("Accepted connection #%i!\nIP: %s\n", connectionNumber, clientIPPort.c_str());
 		connectionNumber++;
 	}
+
 	// No longer need server socket
 	iResult = shutdown(ListenSocket, SD_SEND);
 	if (iResult == SOCKET_ERROR) {
