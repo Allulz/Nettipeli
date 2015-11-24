@@ -11,6 +11,7 @@
 #include <list>
 #include <string>
 
+
 #define DEFAULT_BUFLEN 512
 #define USED_PORT "27015"
 
@@ -18,6 +19,8 @@
 
 std::list<SOCKET *> activeSocket;
 std::mutex socketlistmtx;
+struct sockaddr_in addr, foo;
+
 
 int displayPortAndIP()
 {
@@ -105,6 +108,26 @@ int initServer(SOCKET* ListenSocket)
 	freeaddrinfo(result);
 
 	return 0;
+}
+
+void GetSockIP()
+{
+	int sock = 0;
+	int len = sizeof(struct sockaddr);
+	char* IP_id = 0;
+	
+	memset(&addr, 0, sizeof(struct sockaddr_in));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = inet_addr(IP_id);
+	addr.sin_port = htons(0);
+
+	if (getsockname(sock, (struct sockaddr*)&addr, &len) == SOCKET_ERROR)
+	{
+		WSAGetLastError();
+	}
+
+	else 
+		getsockname(sock, (struct sockaddr *) &foo, &len);
 }
 
 void AddActiveSocket(SOCKET *s) {
@@ -202,9 +225,14 @@ int __cdecl main(void)
 			WSACleanup();
 			return 1;
 		}
-
+		
 		AddActiveSocket(&ClientSocket);
-		printf("Accepted new connection!\n");
+
+		GetSockIP();
+
+		printf("Accepted new connection!\nIP: %s:%d\n", inet_ntoa(foo.sin_addr),
+			ntohs(foo.sin_port));
+
 	}
 	// No longer need server socket
 	iResult = shutdown(ListenSocket, SD_SEND);
