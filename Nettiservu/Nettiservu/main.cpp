@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <thread>
 #include <mutex>
-#include <list>
+#include <map>
 #include <string>
 
 
@@ -17,7 +17,7 @@
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
-std::list<SOCKET *> activeSocket;
+std::map<int, SOCKET *> activeClients;
 std::mutex socketlistmtx;
 struct sockaddr_in addr, foo;
 
@@ -130,28 +130,29 @@ void GetSockIP()
 		getsockname(sock, (struct sockaddr *) &foo, &len);
 }
 
-void AddActiveSocket(SOCKET *s) {
+void AddActiveSocket(int clientID, SOCKET *s) {
 	socketlistmtx.lock();
-	activeSocket.push_back(s);
+	activeClients.insert(std::make_pair(clientID, s));
 	socketlistmtx.unlock();
 }
 
-void DeleteSocket(SOCKET *s) {
+void DeleteSocket(int clientID) {
 	socketlistmtx.lock();
-	activeSocket.remove(s);
+	std::map<int, SOCKET*>::iterator it = activeClients.find(clientID);
+	activeClients.erase(it);
 	socketlistmtx.unlock();
 }
 
 void SendAll(char *str) {
 	socketlistmtx.lock();
-	for (auto &s : activeSocket) 
+	for (int i = 0; i < activeClients.size(); i++)
 	{
-		send(*s, str, strlen(str), 0);
+		send(*activeClients.at(i), str, strlen(str), 0);
 	}
 	socketlistmtx.unlock();
 }
 
-void NewClient(SOCKET ClientSocket) {
+/*void NewClient(SOCKET ClientSocket) {
 	AddActiveSocket(&ClientSocket);
 	int iResult;
 	int iSendResult;
@@ -190,7 +191,7 @@ void NewClient(SOCKET ClientSocket) {
 
 	DeleteSocket(&ClientSocket);
 	printf("thread completed\n");
-}
+}*/
 
 int __cdecl main(void)
 {
@@ -207,7 +208,9 @@ int __cdecl main(void)
 		return 1;
 	}
 
-	while (1) 
+	int numberOfClients = 2;
+	int connectionNumber = 1;
+	while (connectionNumber <= numberOfClients)
 	{
 		iResult = listen(ListenSocket, SOMAXCONN);
 		if (iResult == SOCKET_ERROR) {
@@ -226,13 +229,12 @@ int __cdecl main(void)
 			return 1;
 		}
 		
-		AddActiveSocket(&ClientSocket);
+		AddActiveSocket(connectionNumber, &ClientSocket);
 
 		GetSockIP();
 
-		printf("Accepted new connection!\nIP: %s:%d\n", inet_ntoa(foo.sin_addr),
-			ntohs(foo.sin_port));
-
+		printf("Accepted connection #%i!\nIP: %s:%d\n", connectionNumber, inet_ntoa(foo.sin_addr), ntohs(foo.sin_port));
+		connectionNumber++;
 	}
 	// No longer need server socket
 	iResult = shutdown(ListenSocket, SD_SEND);

@@ -76,6 +76,7 @@ int Connection::initConnection()
 void Connection::askForServerInfo(int infoID)
 {
 	char answr = 'n';
+	bool firstTime = true;
 
 	std::string infoName;
 	if (infoID == 1)
@@ -88,6 +89,11 @@ void Connection::askForServerInfo(int infoID)
 		std::cout << "Please enter server "<< infoName << std::endl;
 		if (infoID == 1)
 		{
+			if (!firstTime)
+			{
+				std::cin.ignore();
+				std::cin.clear();
+			}
 			std::getline(std::cin, serverIP);
 			std::cout << "Server IP: '" + serverIP + "'. Is this correct? (y/n)" << std::endl;
 		}
@@ -98,6 +104,9 @@ void Connection::askForServerInfo(int infoID)
 			std::getline(std::cin, serverPort);
 			std::cout << "Server Port: '" + serverPort + "'. Is this correct? (y/n)" << std::endl;
 		}
+
+		if (firstTime)
+			firstTime = false;
 
 		std::cin >> answr;
 		if (answr == 'y' || answr == 'Y')
