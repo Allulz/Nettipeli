@@ -4,7 +4,7 @@
 #include <string>
 #include <stdint.h>
 
-enum PACKET_TYPE{ NOTYPE = -1, POS };
+enum PACKET_TYPE{ NOTYPE = -1, POS, CLIENT_ID };
 
 struct vec2i
 {
@@ -26,6 +26,19 @@ public:
 		index += sizeof((int32_t)x);
 		*((int32_t*)(&p[index])) = htonl(y);
 		index += sizeof((int32_t)y);
+
+		buf->assign(p, index);
+	}
+
+	static void serializeClientId(int clientID, std::string* buf)
+	{
+		char* p = (char*)malloc(3 * sizeof(int32_t));
+		unsigned int index = 0;
+
+		*((int32_t*)(&p[index])) = htonl(CLIENT_ID);
+		index += sizeof((int32_t)CLIENT_ID);
+		*((int32_t*)(&p[index])) = htonl(clientID);
+		index += sizeof((int32_t)clientID);
 
 		buf->assign(p, index);
 	}

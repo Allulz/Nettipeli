@@ -31,6 +31,26 @@ int recv_len;
 struct addrinfo *result = NULL;
 struct addrinfo hints;
 int slen = sizeof(hints);
+SOCKET connectSocket;
+
+//int sendPos(int x, int y)
+//{
+//	int iResult;
+//
+//	std::string serializedData;
+//	Serializer::serializePos(x, y, &serializedData);
+//
+//	iResult = send(connectSocket, serializedData.c_str(), (int)serializedData.length(), 0);
+//	if (iResult == SOCKET_ERROR)
+//	{
+//		printf("send failed with error: %d\n", WSAGetLastError());
+//		closesocket(connectSocket);
+//		WSACleanup();
+//		return 1;
+//	}
+//
+//	return 0;
+//}
 
 
 
@@ -144,9 +164,46 @@ void DeleteSocket(int clientID) {
 
 void SendAll(char *str) {
 	socketlistmtx.lock();
+	SOCKET clientSocket;
 	for (int i = 0; i < activeClients.size(); i++)
 	{
-		send(*activeClients.at(i), str, strlen(str), 0);
+		clientSocket = *activeClients[i];
+		send(clientSocket, str, strlen(str), 0);
+	}
+	socketlistmtx.unlock();
+}
+
+//Sends package to all clients except one
+void SendAlmostAll(char *str, int noSendForthisClient){
+	socketlistmtx.lock();
+	SOCKET clientSocket;
+	for (int i = 0; i < activeClients.size(); i++)
+	{
+		if (noSendForthisClient != i)
+		{
+			clientSocket = *activeClients[i];
+			send(clientSocket, str, strlen(str), 0);
+		}
+
+		else
+			;
+	}
+	socketlistmtx.unlock();
+}
+
+//Sends package to one client
+void SendToOne(char *str, int clientID){
+	socketlistmtx.lock();
+	SOCKET clientSocket;
+	for (int i = 0; i < activeClients.size(); i++)
+	{
+		if (clientID == i)
+		{
+			clientSocket = *activeClients[i];
+			send(clientSocket, str, strlen(str), 0);
+		}
+		else
+			;
 	}
 	socketlistmtx.unlock();
 }
@@ -182,6 +239,14 @@ int listenForClients(int numberOfClients, SOCKET *listenSocket)
 		std::string clientIPPort = getSockPortAndIP(&ClientSocket);
 
 		printf("Accepted connection #%i! - IP: %s\n", connectionNumber, clientIPPort.c_str());
+		
+		//Sends connectionNumber to client to determine the spawning location
+		std::string serializedID;
+		Serializer::serializeClientId(connectionNumber, &serializedID);
+		
+		char *idData = &serializedID[0u];
+		SendToOne(idData, connectionNumber - 1);
+
 		connectionNumber++;
 	}
 
@@ -211,7 +276,11 @@ void handleCommunicationWithClient(int clientID)
 			PACKET_TYPE packetType = Serializer::getPacketType(&recvData);
 			if (packetType == POS)
 			{
+				
+				char *rData = &recvData[0u];
+				SendAlmostAll(rData, clientID - 1);
 				vec2i pos = Serializer::deserializePos(&recvData);
+				
 				printf("Pos received - x: %i - y: %i\n", pos.x, pos.y);
 			}
 		}
