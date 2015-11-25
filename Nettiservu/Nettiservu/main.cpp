@@ -9,9 +9,11 @@
 #include <thread>
 #include <mutex>
 #include <map>
+#include <vector>
 #include <string>
 #include <sstream>
 
+#include "Serializer.h"
 
 #define DEFAULT_BUFLEN 512
 #define USED_PORT "27015"
@@ -149,36 +151,82 @@ void SendAll(char *str) {
 	socketlistmtx.unlock();
 }
 
-/*void NewClient(SOCKET ClientSocket) {
-	AddActiveSocket(&ClientSocket);
+int listenForClients(int numberOfClients, SOCKET *listenSocket)
+{
+	int iResult;
+
+	SOCKET ClientSocket = INVALID_SOCKET;
+
+	int connectionNumber = 0;
+	while (connectionNumber < numberOfClients)
+	{
+		iResult = listen(*listenSocket, SOMAXCONN);
+		if (iResult == SOCKET_ERROR) {
+			printf("listen failed with error: %d\n", WSAGetLastError());
+			closesocket(*listenSocket);
+			WSACleanup();
+			return 1;
+		}
+
+		// Accept a client socket
+		ClientSocket = accept(*listenSocket, NULL, NULL);
+		if (ClientSocket == INVALID_SOCKET) {
+			printf("accept failed with error: %d\n", WSAGetLastError());
+			closesocket(*listenSocket);
+			WSACleanup();
+			return 1;
+		}
+
+		AddActiveSocket(connectionNumber, new SOCKET(ClientSocket));
+
+		std::string clientIPPort = getSockPortAndIP(&ClientSocket);
+
+		printf("Accepted connection #%i! - IP: %s\n", connectionNumber, clientIPPort.c_str());
+		connectionNumber++;
+	}
+
+	return 0;
+}
+
+void handleCommunicationWithClient(int clientID)
+{
 	int iResult;
 	int iSendResult;
 	char recvbuf[DEFAULT_BUFLEN];
 	//clear the buffer by filling null, it might have previously received data
 	memset(recvbuf, '\0', DEFAULT_BUFLEN);
 	int recvbuflen = DEFAULT_BUFLEN;
-	static int thcount = 1;
-	int thisthread = thcount;
-	thcount++;
-	printf("thread %d started\n", thisthread);
+
+	SOCKET clientSocket = *activeClients[clientID];
+
+	printf("thread started for client #%i\n", clientID);
 	// Receive until the peer shuts down the connection
 	while (1) 
 	{
-		iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-		if (iResult > 0) {
-			printf("Bytes received: %d\n", iResult);
-			SendAll((char*)std::string("Dude_" + std::to_string(thisthread) + ": " + recvbuf).c_str());
+		iResult = recv(clientSocket, recvbuf, recvbuflen, 0);
+		if (iResult > 0) 
+		{
+			std::string recvData;
+			recvData.assign(recvbuf, recvbuflen);
+			PACKET_TYPE packetType = Serializer::getPacketType(&recvData);
+			if (packetType == POS)
+			{
+				vec2i pos = Serializer::deserializePos(&recvData);
+				printf("Pos received - x: %i - y: %i\n", pos.x, pos.y);
+			}
 		}
-		else if (iResult == 0) {
-			printf("Connection closing... th=%d\n", thisthread);
-			DeleteSocket(&ClientSocket);
-			closesocket(ClientSocket);
+		else if (iResult == 0) 
+		{
+			printf("Connection closing... client#%i\n", clientID);
+			DeleteSocket(clientID);
+			closesocket(clientSocket);
 			return;
 		}
-		else  {
+		else  
+		{
 			printf("recv failed with error: %d\n", WSAGetLastError());
-			DeleteSocket(&ClientSocket);
-			closesocket(ClientSocket);
+			DeleteSocket(clientID);
+			closesocket(clientSocket);
 			return;
 		}
 
@@ -186,18 +234,17 @@ void SendAll(char *str) {
 		memset(recvbuf, '\0', DEFAULT_BUFLEN);
 	}
 
-	DeleteSocket(&ClientSocket);
-	printf("thread completed\n");
-}*/
+	DeleteSocket(clientID);
+	printf("thread completed for client #%i\n", clientID);
+}
 
 int __cdecl main(void)
 {
 	int iResult;
 
-	SOCKET ListenSocket = INVALID_SOCKET;
-	SOCKET ClientSocket = INVALID_SOCKET;
+	SOCKET listenSocket = INVALID_SOCKET;
 
-	iResult = initServer(&ListenSocket);
+	iResult = initServer(&listenSocket);
 	if (iResult != 0)
 	{
 		printf("Failed to initialize server\n");
@@ -205,84 +252,36 @@ int __cdecl main(void)
 		return 1;
 	}
 
-	int numberOfClients = 2;
-	int connectionNumber = 1;
-	while (connectionNumber <= numberOfClients)
+	int numberOfClients = 1;
+
+	iResult = listenForClients(numberOfClients, &listenSocket);
+	if (iResult != 0)
 	{
-		iResult = listen(ListenSocket, SOMAXCONN);
-		if (iResult == SOCKET_ERROR) {
-			printf("listen failed with error: %d\n", WSAGetLastError());
-			closesocket(ListenSocket);
-			WSACleanup();
-			return 1;
-		}
-		
-		// Accept a client socket
-		ClientSocket = accept(ListenSocket, NULL, NULL);
-		if (ClientSocket == INVALID_SOCKET) {
-			printf("accept failed with error: %d\n", WSAGetLastError());
-			closesocket(ListenSocket);
-			WSACleanup();
-			return 1;
-		}
-		
-		AddActiveSocket(connectionNumber, &ClientSocket);
-
-		std::string clientIPPort = getSockPortAndIP(&ClientSocket);
-
-		printf("Accepted connection #%i!\nIP: %s\n", connectionNumber, clientIPPort.c_str());
-		connectionNumber++;
-	}
-
-	// No longer need server socket
-	iResult = shutdown(ListenSocket, SD_SEND);
-	if (iResult == SOCKET_ERROR) {
-		printf("shutdown failed with error: %d\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
+		printf("Error while listening for clients to connect.\n");
+		system("PAUSE");
 		return 1;
 	}
 
-	// shutdown the connection since we're done
-	iResult = shutdown(ClientSocket, SD_SEND);
-	if (iResult == SOCKET_ERROR) {
-		printf("shutdown failed with error: %d\n", WSAGetLastError());
-		closesocket(ClientSocket);
-		WSACleanup();
-		return 1;
-	}
-
-	while (1)
+	//Start communication threads for clients.
+	std::vector<std::thread*> clientThreads;
+	for (int i = 0; i < numberOfClients; i++)
 	{
-		
-		fflush(stdout);
-
-		
-		memset(buf, '\0', DEFAULT_BUFLEN);
-
-		
-		if ((recv_len = recvfrom(ClientSocket, buf, DEFAULT_BUFLEN, 0, (struct sockaddr *) &hints, &slen)) == SOCKET_ERROR)
-		{
-			printf("recvfrom() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
-
-		
-		//printf("Received packet from %s:%d\n", inet_ntoa(hints.ai_addr), ntohs(hints.ai_protocol));                  ei käänny.... pistin kommentteihin kuin pomo
-		printf("Data: %s\n", buf);
-
-		//now reply the client with the same data
-		if (sendto(ClientSocket, buf, recv_len, 0, (struct sockaddr*) &hints, slen) == SOCKET_ERROR)
-		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
+			clientThreads.push_back(new std::thread(handleCommunicationWithClient, i));
 	}
+
+	//Wait for client threads to finish.
+	for (int i = 0; i < numberOfClients; i++)
+	{
+		clientThreads[i]->join();
+	}
+
+
 
 	// cleanup
-	closesocket(ListenSocket);
-	closesocket(ClientSocket);
+	closesocket(listenSocket);
 	WSACleanup();
+
+	system("PAUSE");
 
 	return 0;
 }

@@ -23,6 +23,7 @@ int main(int argc, char* args[])
 		//Wait for 4s
 		SDL_Delay(4000);
 	}
+
 	//The window we'll be rendering to
 	SDL_Window* window = nullptr;
 	//Renderer
@@ -36,7 +37,7 @@ int main(int argc, char* args[])
 	}
 	else
 	{
-		window = createWindow("NettiiSaatana", 1980, 1080);
+		window = createWindow("NettiiSaatana", 800, 600);
 		renderer = createRenderer(window);
 
 		if (window == nullptr || renderer == nullptr)
@@ -67,10 +68,10 @@ int main(int argc, char* args[])
 			SDL_Rect dRect;
 			dRect.x = 10.f;
 			dRect.y = 10.f;
-			dRect.w = 256.f;
-			dRect.h = 256.f;
+			dRect.w = 128.f;
+			dRect.h = 128.f;
 			sprt.setBounds(dRect);
-			sprt.setOrigin(128.f, 128.f);
+			sprt.setOrigin(64.f, 64.f);
 
 			float posX = 10.f, posY = 10.f;
 
@@ -106,13 +107,13 @@ int main(int argc, char* args[])
 				if (keyState[SDL_SCANCODE_D])
 					posX += 1.f;
 
-				Connection data;
-				strcpy(data.message, "pippeli");
-				void sendUDP();
-
 				sprt.setPosition(posX, posY);
 
-
+				iResult = connection.sendPos(sprt.getPosition());
+				if (iResult != 0)
+				{
+					printf("Failed to send position to server!\n");
+				}
 				
 
 				//Clear screen

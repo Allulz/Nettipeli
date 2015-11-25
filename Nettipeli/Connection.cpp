@@ -10,24 +10,6 @@ Connection::~Connection()
 {
 }
 
-void Connection::sendUDP()
-{
-	//send the message
-	if (sendto(connectSocket, message, strlen(message), 0, (struct sockaddr *) &hints, slen) == SOCKET_ERROR)
-	{
-		printf("sendto() failed with error code : %d", WSAGetLastError());
-		exit(EXIT_FAILURE);
-	}
-	memset(buf, '\0', DEFAULT_BUFLEN);
-
-	if (recvfrom(connectSocket, buf, DEFAULT_BUFLEN, 0, (struct sockaddr *) &hints, &slen) == SOCKET_ERROR)
-	{
-		printf("recvfrom() failed with error code : %d", WSAGetLastError());
-		exit(EXIT_FAILURE);
-	}
-
-	puts(buf);
-}
 
 int Connection::initConnection()
 {
@@ -63,9 +45,9 @@ int Connection::initConnection()
 	for (ptr = result; ptr != nullptr; ptr = ptr->ai_next) 
 	{
 		// Create SOCKET for connecting to server
-		connectSocket = socket(ptr->ai_family, ptr->ai_socktype,
-			ptr->ai_protocol);
-		if (connectSocket == INVALID_SOCKET) {
+		connectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+		if (connectSocket == INVALID_SOCKET) 
+		{
 			printf("socket failed with error: %ld\n", WSAGetLastError());
 			WSACleanup();
 			return 1;
@@ -73,7 +55,8 @@ int Connection::initConnection()
 
 		// Connect to server
 		iResult = connect(connectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
-		if (iResult == SOCKET_ERROR) {
+		if (iResult == SOCKET_ERROR) 
+		{
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
 			continue;
@@ -91,6 +74,46 @@ int Connection::initConnection()
 
 	return 0;
 }
+
+void Connection::sendUDP()
+{
+	//send the message
+	if (sendto(connectSocket, message, strlen(message), 0, (struct sockaddr *) &hints, slen) == SOCKET_ERROR)
+	{
+		printf("sendto() failed with error code : %d", WSAGetLastError());
+		exit(EXIT_FAILURE);
+	}
+	memset(buf, '\0', DEFAULT_BUFLEN);
+
+	if (recvfrom(connectSocket, buf, DEFAULT_BUFLEN, 0, (struct sockaddr *) &hints, &slen) == SOCKET_ERROR)
+	{
+		printf("recvfrom() failed with error code : %d", WSAGetLastError());
+		exit(EXIT_FAILURE);
+	}
+
+	puts(buf);
+}
+
+int Connection::sendPos(SDL_Point postToSend)
+{
+	int iResult;
+
+	std::string serializedData;
+	Serializer::serializePos(postToSend, &serializedData);
+
+	iResult = send(connectSocket, serializedData.c_str(), (int)serializedData.length(), 0);
+	if (iResult == SOCKET_ERROR) 
+	{
+		printf("send failed with error: %d\n", WSAGetLastError());
+		closesocket(connectSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	return 0;
+}
+
+//private
 
 void Connection::askForServerInfo(int infoID)
 {
