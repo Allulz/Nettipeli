@@ -22,16 +22,19 @@ public:
 	char buf[DEFAULT_BUFLEN];
 
 	int initConnection();
-	void sendUDP();
 	int sendPos(SDL_Point postToSend);
+	int listenServer();
 
 	char message[DEFAULT_BUFLEN];
 private:
 	void askForServerInfo(int infoID);
+
 
 	WSADATA wsaData;
 	SOCKET connectSocket;
 	struct addrinfo *result, hints;
 	int slen = sizeof(hints);
 	std::string serverIP, serverPort;
+	char recvbuf[DEFAULT_BUFLEN];
+	int recvbuflen = DEFAULT_BUFLEN;
 };

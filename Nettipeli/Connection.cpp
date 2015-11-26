@@ -75,24 +75,7 @@ int Connection::initConnection()
 	return 0;
 }
 
-void Connection::sendUDP()
-{
-	//send the message
-	if (sendto(connectSocket, message, strlen(message), 0, (struct sockaddr *) &hints, slen) == SOCKET_ERROR)
-	{
-		printf("sendto() failed with error code : %d", WSAGetLastError());
-		exit(EXIT_FAILURE);
-	}
-	memset(buf, '\0', DEFAULT_BUFLEN);
 
-	if (recvfrom(connectSocket, buf, DEFAULT_BUFLEN, 0, (struct sockaddr *) &hints, &slen) == SOCKET_ERROR)
-	{
-		printf("recvfrom() failed with error code : %d", WSAGetLastError());
-		exit(EXIT_FAILURE);
-	}
-
-	puts(buf);
-}
 
 int Connection::sendPos(SDL_Point postToSend)
 {
@@ -109,6 +92,51 @@ int Connection::sendPos(SDL_Point postToSend)
 		WSACleanup();
 		return 1;
 	}
+
+	return 0;
+}
+
+int Connection::listenServer()
+{
+	struct addrinfo *ptr;
+	int iResult;
+
+	for (ptr = result; ptr != nullptr; ptr = ptr->ai_next)
+	{
+		// Create SOCKET for connecting to server
+		connectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+		if (connectSocket == INVALID_SOCKET)
+		{
+			printf("socket failed with error: %ld\n", WSAGetLastError());
+			WSACleanup();
+			return 1;
+		}
+
+		// Connect to server
+		iResult = connect(connectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
+		if (iResult == SOCKET_ERROR)
+		{
+			closesocket(connectSocket);
+			connectSocket = INVALID_SOCKET;
+			continue;
+		}
+		break;
+	}
+
+	// Receive data until the server closes the connection
+	iResult = recv(connectSocket, recvbuf, recvbuflen, 0);
+
+	
+
+	freeaddrinfo(result);
+
+	if (iResult > 0)
+		printf("Bytes received: %d\n", iResult);
+	else if (iResult == 0)
+		printf("Connection closed\n");
+	else
+		printf("recv failed: %d\n", WSAGetLastError());
+
 
 	return 0;
 }
@@ -157,3 +185,4 @@ void Connection::askForServerInfo(int infoID)
 		}
 	}
 }
+

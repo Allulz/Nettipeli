@@ -115,6 +115,7 @@ int main(int argc, char* args[])
 					printf("Failed to send position to server!\n");
 				}
 				
+				//connection.listenServer();
 
 				//Clear screen
 				SDL_RenderClear(renderer);
