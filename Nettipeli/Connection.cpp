@@ -77,12 +77,14 @@ int Connection::initConnection()
 
 
 
-int Connection::sendPos(SDL_Point postToSend)
+int Connection::sendPosRot(SDL_Point postToSend, float rotToSend)
 {
 	int iResult;
 
-	std::string serializedData;
-	Serializer::serializePos(postToSend, &serializedData);
+	std::string serializedPacketType, serializedPos, serializedRotation;
+	Serializer::serializePacketType(POSROT, &serializedPacketType);
+	Serializer::serializePos(postToSend, &serializedPos);
+	std::string serializedData = serializedPacketType + serializedPos + serializedRotation;
 
 	iResult = send(connectSocket, serializedData.c_str(), (int)serializedData.length(), 0);
 	if (iResult == SOCKET_ERROR) 

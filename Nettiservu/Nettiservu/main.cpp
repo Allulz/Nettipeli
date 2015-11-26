@@ -276,12 +276,14 @@ void handleCommunicationWithClient(int clientID)
 			std::string recvData;
 			recvData.assign(recvbuf, recvbuflen);
 			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
-			if (packetType == POS)
+			if (packetType == POSROT)
 			{
 				SendAlmostAll((char*)recvData.c_str(), recvData.size(), clientID);
 
-				vec2i pos = Serializer::deserializePos(&recvData);
-				printf("Pos received - x: %i - y: %i\n", pos.x, pos.y);
+				vec2i pos;
+				float rot;
+				Serializer::deserializePosRot(&pos, &rot, &recvData);
+				printf("Pos received - x: %i - y: %i\nRotation received: %.2f\n", pos.x, pos.y, rot);
 			}
 		}
 		else if (iResult == 0) 
@@ -321,7 +323,7 @@ int __cdecl main(void)
 		return 1;
 	}
 
-	int numberOfClients = 1;
+	int numberOfClients = 2;
 
 	iResult = listenForClients(numberOfClients, &listenSocket);
 	if (iResult != 0)

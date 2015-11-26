@@ -22,7 +22,7 @@ public:
 	char buf[DEFAULT_BUFLEN];
 
 	int initConnection();
-	int sendPos(SDL_Point postToSend);
+	int sendPosRot(SDL_Point postToSend, float rotToSend);
 
 	SOCKET* getServerSocket(){ return &connectSocket; }
 

@@ -65,6 +65,11 @@ SDL_Point Sprite::getPosition()
 	return posToReturn;
 }
 
+float Sprite::getRotation()
+{
+	return rotationAngle;
+}
+
 SDL_Point Sprite::getOrigin()
 {
 	return origin;

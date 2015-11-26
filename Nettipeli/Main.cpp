@@ -9,7 +9,7 @@
 #include <map>
 
 Connection connection;
-std::map<int, Sprite> sprites;
+std::map<int, Sprite*> sprites;
 
 bool initializeSDL();
 
@@ -38,10 +38,13 @@ void handleComms()
 			std::string recvData;
 			recvData.assign(recvbuf, recvbuflen);
 			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
-			if (packetType == POS)
+			if (packetType == POSROT)
 			{
-				SDL_Point pos = Serializer::deserializePos(&recvData);
-				sprites[0].setPosition(pos);
+				SDL_Point pos;
+				float rot;
+				Serializer::deserializePosRot(&pos, &rot, &recvData);
+				printf("Pos received - x: %i - y: %i\nRotation received: %.2f\n", pos.x, pos.y, rot);
+				sprites[1]->setPosition(pos);
 			}
 			if (packetType == CLIENT_ID)
 			{
@@ -129,18 +132,12 @@ int main(int argc, char* args[])
 
 			float posX = 10.f, posY = 10.f;
 
-			Sprite tempSprite;
-			tempSprite.setTexture(txtr);
-			dRect.x = 400.f;
-			dRect.y = 10.f;
-			dRect.w = 128.f;
-			dRect.h = 128.f;
-			tempSprite.setBounds(dRect);
-			tempSprite.setOrigin(64.0f, 64.0f);
-
 			int clientID = 1;
 
-			sprites.insert(std::make_pair(clientID, tempSprite));
+			sprites.insert(std::make_pair(clientID, new Sprite));
+			sprites[1]->setTexture(txtr);
+			sprites[1]->setBounds(dRect);
+			sprites[1]->setOrigin(64.f, 64.f);
 
 			std::thread commThread(handleComms);
 			commThread.detach();
@@ -179,7 +176,7 @@ int main(int argc, char* args[])
 
 				sprt.setPosition(posX, posY);
 
-				iResult = connection.sendPos(sprt.getPosition());
+				iResult = connection.sendPosRot(sprt.getPosition(), sprt.getRotation());
 				if (iResult != 0)
 				{
 					printf("Failed to send position to server!\n");
@@ -192,9 +189,9 @@ int main(int argc, char* args[])
 
 				//Render sprite to screen
 				sprt.draw(renderer);
-				for (int i = 0; i < sprites.size(); i++)
+				for (std::map<int, Sprite*>::iterator it = sprites.begin(); it != sprites.end(); it++)
 				{
-					sprites[i].draw(renderer);
+					(*it).second->draw(renderer);
 				}
 
 				//Update screen

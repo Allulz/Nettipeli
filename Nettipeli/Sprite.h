@@ -45,6 +45,11 @@ public:
 	SDL_Point getPosition();
 
 	/**
+	Get current rotation angle of sprite.
+	*/
+	float getRotation();
+
+	/**
 	Get current sprite origin.
 	*/
 	SDL_Point getOrigin();
