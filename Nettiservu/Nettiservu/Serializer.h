@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <string>
 #include <stdint.h>
+#include <sstream>
 
 enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID };
 
@@ -56,22 +57,22 @@ public:
 	{
 		char* xPosData = (char*)malloc(sizeof(int32_t));
 		char* yPosData = (char*)malloc(sizeof(int32_t));
-		char* rotData = (char*)malloc(sizeof(float));
+		std::stringstream rotStream;
 
 		int index = sizeof(int32_t);
 		xPosData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
 		index += sizeof(int32_t);
 		yPosData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
 		index += sizeof(int32_t);
-		rotData = (char*)data->substr(index, index + sizeof(float)).c_str();
+		rotStream << data->substr(index, index + sizeof(float));
 		index += sizeof(float);
 
 		pos->x = *((int32_t*)xPosData);
 		pos->y = *((int32_t*)yPosData);
-		*rot = *((float*)rotData);
+		rotStream >> *rot;
 		pos->x = ntohl(pos->x);
 		pos->y = ntohl(pos->y);
-		*rot = ntohl(*rot);
+		//*rot = (float)ntohl(*rot);
 	}
 
 	static PACKET_TYPE deserializePacketType(std::string* data)

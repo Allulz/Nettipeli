@@ -45,6 +45,7 @@ void handleComms()
 				Serializer::deserializePosRot(&pos, &rot, &recvData);
 				printf("Pos received - x: %i - y: %i\nRotation received: %.2f\n", pos.x, pos.y, rot);
 				sprites[1]->setPosition(pos);
+				sprites[1]->setRotation(rot);
 			}
 			if (packetType == CLIENT_ID)
 			{

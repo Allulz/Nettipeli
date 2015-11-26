@@ -276,6 +276,7 @@ void handleCommunicationWithClient(int clientID)
 			std::string recvData;
 			recvData.assign(recvbuf, recvbuflen);
 			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
+
 			if (packetType == POSROT)
 			{
 				SendAlmostAll((char*)recvData.c_str(), recvData.size(), clientID);
@@ -284,6 +285,7 @@ void handleCommunicationWithClient(int clientID)
 				float rot;
 				Serializer::deserializePosRot(&pos, &rot, &recvData);
 				printf("Pos received - x: %i - y: %i\nRotation received: %.2f\n", pos.x, pos.y, rot);
+
 			}
 		}
 		else if (iResult == 0) 

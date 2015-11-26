@@ -48,6 +48,10 @@ void Sprite::setBounds(SDL_Rect boundsToSet)
 
 void Sprite::setRotation(float angle)
 {
+	while (angle < 0)
+	{
+		angle = angle + 360.f;
+	}
 	rotationAngle = angle;
 }
 
