@@ -17,6 +17,7 @@ public:
 	Sets the position of the sprite.
 	*/
 	void setPosition(float x, float y);
+	void setPosition(SDL_Point pos);
 
 	/**
 	Sets the size of the sprite.

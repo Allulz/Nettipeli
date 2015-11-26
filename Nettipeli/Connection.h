@@ -23,7 +23,8 @@ public:
 
 	int initConnection();
 	int sendPos(SDL_Point postToSend);
-	int listenServer();
+
+	SOCKET* getServerSocket(){ return &connectSocket; }
 
 	char message[DEFAULT_BUFLEN];
 private:

@@ -30,9 +30,9 @@ public:
 		buf->assign(p, index);
 	}
 
-	static void serializeClientId(int clientID, std::string* buf)
+	static void serializeClientID(int clientID, std::string* buf)
 	{
-		char* p = (char*)malloc(3 * sizeof(int32_t));
+		char* p = (char*)malloc(2 * sizeof(int32_t));
 		unsigned int index = 0;
 
 		*((int32_t*)(&p[index])) = htonl(CLIENT_ID);
@@ -73,6 +73,19 @@ public:
 		type = *(PACKET_TYPE*)typeData;
 		type = (PACKET_TYPE)ntohl(type);
 		return type;
+	}
+
+	static int32_t deserializeClientID(std::string* data)
+	{
+		int32_t id;
+		char* idData = (char*)malloc(sizeof(int32_t));
+
+		int index = sizeof(int32_t);
+		idData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+
+		id = *(int32_t*)idData;
+		id = ntohl(id);
+		return id;
 	}
 
 private:

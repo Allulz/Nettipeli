@@ -5,6 +5,11 @@
 #include "Connection.h"
 #include "NetworkData.h"
 #include <stdio.h>
+#include <thread>
+#include <map>
+
+Connection connection;
+std::map<int, Sprite> sprites;
 
 bool initializeSDL();
 
@@ -12,10 +17,59 @@ SDL_Window* createWindow(std::string windowTitle, int width, int height);
 
 SDL_Renderer* createRenderer(SDL_Window* sdlWindow);
 
+void handleComms()
+{
+	int iResult;
+	int iSendResult;
+	char recvbuf[DEFAULT_BUFLEN];
+	//clear the buffer by filling null, it might have previously received data
+	memset(recvbuf, '\0', DEFAULT_BUFLEN);
+	int recvbuflen = DEFAULT_BUFLEN;
+
+	SOCKET serverSocket = *connection.getServerSocket();
+
+	printf("thread started\n");
+	// Receive until the peer shuts down the connection
+	while (1)
+	{
+		iResult = recv(serverSocket, recvbuf, recvbuflen, 0);
+		if (iResult > 0)
+		{
+			std::string recvData;
+			recvData.assign(recvbuf, recvbuflen);
+			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
+			if (packetType == POS)
+			{
+				SDL_Point pos = Serializer::deserializePos(&recvData);
+				sprites[0].setPosition(pos);
+			}
+			if (packetType == CLIENT_ID)
+			{
+				int playerNumber = Serializer::deserializeClientID(&recvData);
+				printf("Player number: %i\n", playerNumber);
+			}
+		}
+		else if (iResult == 0)
+		{
+			printf("Connection closing...\n");
+			closesocket(serverSocket);
+			return;
+		}
+		else
+		{
+			printf("recv failed with error: %d\n", WSAGetLastError());
+			closesocket(serverSocket);
+			return;
+		}
+
+		//clear the buffer by filling null, it might have previously received data
+		memset(recvbuf, '\0', DEFAULT_BUFLEN);
+	}
+}
+
 int main(int argc, char* args[])
 {
 	int iResult;
-	Connection connection;
 	iResult = connection.initConnection();
 	if (iResult != 0)
 	{
@@ -75,6 +129,22 @@ int main(int argc, char* args[])
 
 			float posX = 10.f, posY = 10.f;
 
+			Sprite tempSprite;
+			tempSprite.setTexture(txtr);
+			dRect.x = 400.f;
+			dRect.y = 10.f;
+			dRect.w = 128.f;
+			dRect.h = 128.f;
+			tempSprite.setBounds(dRect);
+			tempSprite.setOrigin(64.0f, 64.0f);
+
+			int clientID = 1;
+
+			sprites.insert(std::make_pair(clientID, tempSprite));
+
+			std::thread commThread(handleComms);
+			commThread.detach();
+
 			while (!quitProgram)
 			{
 				while (SDL_PollEvent(&sdlEvent) != 0)
@@ -122,6 +192,10 @@ int main(int argc, char* args[])
 
 				//Render sprite to screen
 				sprt.draw(renderer);
+				for (int i = 0; i < sprites.size(); i++)
+				{
+					sprites[i].draw(renderer);
+				}
 
 				//Update screen
 				SDL_RenderPresent(renderer);

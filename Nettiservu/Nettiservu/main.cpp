@@ -248,7 +248,7 @@ void sendClientIDs()
 	{
 		//Sends connectionNumber to client to determine the spawning location
 		std::string serializedID;
-		Serializer::serializeClientId(i, &serializedID);
+		Serializer::serializeClientID(i, &serializedID);
 
 		char *idData = &serializedID[0u];
 		SendToOne(idData, DEFAULT_BUFLEN, i);
@@ -278,7 +278,7 @@ void handleCommunicationWithClient(int clientID)
 			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
 			if (packetType == POS)
 			{
-				//SendAll((char*)recvData.c_str(), recvData.size());
+				SendAlmostAll((char*)recvData.c_str(), recvData.size(), clientID);
 
 				vec2i pos = Serializer::deserializePos(&recvData);
 				printf("Pos received - x: %i - y: %i\n", pos.x, pos.y);
@@ -331,7 +331,7 @@ int __cdecl main(void)
 		return 1;
 	}
 
-	//sendClientIDs();
+	sendClientIDs();
 
 	//Start communication threads for clients.
 	std::vector<std::thread*> clientThreads;

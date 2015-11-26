@@ -29,6 +29,12 @@ void Sprite::setPosition(float x, float y)
 	boundsRectangle.y = y;
 }
 
+void Sprite::setPosition(SDL_Point pos)
+{
+	boundsRectangle.x = pos.x;
+	boundsRectangle.y = pos.y;
+}
+
 void Sprite::setSize(float width, float height)
 {
 	boundsRectangle.w = width;
