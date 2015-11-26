@@ -162,19 +162,19 @@ void DeleteSocket(int clientID) {
 	socketlistmtx.unlock();
 }
 
-void SendAll(char *str) {
+void SendAll(char *buf, unsigned int bufLen) {
 	socketlistmtx.lock();
 	SOCKET clientSocket;
 	for (int i = 0; i < activeClients.size(); i++)
 	{
 		clientSocket = *activeClients[i];
-		send(clientSocket, str, strlen(str), 0);
+		send(clientSocket, buf, bufLen, 0);
 	}
 	socketlistmtx.unlock();
 }
 
 //Sends package to all clients except one
-void SendAlmostAll(char *str, int noSendForthisClient){
+void SendAlmostAll(char *buf, unsigned int bufLen, int noSendForthisClient){
 	socketlistmtx.lock();
 	SOCKET clientSocket;
 	for (int i = 0; i < activeClients.size(); i++)
@@ -182,17 +182,14 @@ void SendAlmostAll(char *str, int noSendForthisClient){
 		if (noSendForthisClient != i)
 		{
 			clientSocket = *activeClients[i];
-			send(clientSocket, str, strlen(str), 0);
+			send(clientSocket, buf, bufLen, 0);
 		}
-
-		else
-			;
 	}
 	socketlistmtx.unlock();
 }
 
 //Sends package to one client
-void SendToOne(char *str, int clientID){
+void SendToOne(char *buf, unsigned int bufLen, int clientID){
 	socketlistmtx.lock();
 	SOCKET clientSocket;
 	for (int i = 0; i < activeClients.size(); i++)
@@ -200,10 +197,9 @@ void SendToOne(char *str, int clientID){
 		if (clientID == i)
 		{
 			clientSocket = *activeClients[i];
-			send(clientSocket, str, strlen(str), 0);
+			send(clientSocket, buf, bufLen, 0);
+			break;
 		}
-		else
-			;
 	}
 	socketlistmtx.unlock();
 }
@@ -239,18 +235,24 @@ int listenForClients(int numberOfClients, SOCKET *listenSocket)
 		std::string clientIPPort = getSockPortAndIP(&ClientSocket);
 
 		printf("Accepted connection #%i! - IP: %s\n", connectionNumber, clientIPPort.c_str());
-		
-		//Sends connectionNumber to client to determine the spawning location
-		std::string serializedID;
-		Serializer::serializeClientId(connectionNumber, &serializedID);
-		
-		char *idData = &serializedID[0u];
-		SendToOne(idData, connectionNumber - 1);
 
 		connectionNumber++;
 	}
 
 	return 0;
+}
+
+void sendClientIDs()
+{
+	for (int i = 0; i < activeClients.size(); i++)
+	{
+		//Sends connectionNumber to client to determine the spawning location
+		std::string serializedID;
+		Serializer::serializeClientId(i, &serializedID);
+
+		char *idData = &serializedID[0u];
+		SendToOne(idData, DEFAULT_BUFLEN, i);
+	}
 }
 
 void handleCommunicationWithClient(int clientID)
@@ -273,14 +275,12 @@ void handleCommunicationWithClient(int clientID)
 		{
 			std::string recvData;
 			recvData.assign(recvbuf, recvbuflen);
-			PACKET_TYPE packetType = Serializer::getPacketType(&recvData);
+			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
 			if (packetType == POS)
 			{
-				
-				char *rData = &recvData[0u];
-				SendAlmostAll(rData, clientID - 1);
+				SendAll((char*)recvData.c_str(), recvData.size());
+
 				vec2i pos = Serializer::deserializePos(&recvData);
-				
 				printf("Pos received - x: %i - y: %i\n", pos.x, pos.y);
 			}
 		}
@@ -330,6 +330,8 @@ int __cdecl main(void)
 		system("PAUSE");
 		return 1;
 	}
+
+	sendClientIDs();
 
 	//Start communication threads for clients.
 	std::vector<std::thread*> clientThreads;

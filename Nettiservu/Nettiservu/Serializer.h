@@ -45,20 +45,16 @@ public:
 
 	static vec2i deserializePos( std::string* data)
 	{
-		char xPosData[sizeof(int32_t)];
-		char yPosData[sizeof(int32_t)];
+		char* xPosData = (char*)malloc(sizeof(int32_t));
+		char* yPosData = (char*)malloc(sizeof(int32_t));
 
-		int index = sizeof(int32_t);
 		vec2i pos;
 
-		for (int i = 0; i < sizeof(int32_t); i++, index++)
-		{
-			xPosData[i] = data->at(index);
-		}
-		for (int i = 0; i < sizeof(int32_t); i++, index++)
-		{
-			yPosData[i] = data->at(index);
-		}
+		int index = sizeof(int32_t);
+		xPosData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+		index += sizeof(int32_t);
+		yPosData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+		index += sizeof(int32_t);
 
 		pos.x = *((int32_t*)xPosData);
 		pos.y = *((int32_t*)yPosData);
@@ -67,16 +63,15 @@ public:
 		return pos;
 	}
 
-	static PACKET_TYPE getPacketType(std::string* data)
+	static PACKET_TYPE deserializePacketType(std::string* data)
 	{
 		PACKET_TYPE type = NOTYPE;
-		char typeData[sizeof(int32_t)];
-		for (int i = 0; i < sizeof(int32_t); i++)
-		{
-			typeData[i] = data->at(i);
-		}
+		char* typeData = (char*)malloc(sizeof(int32_t));
+		
+		typeData = (char*)data->substr(0, sizeof(int32_t)).c_str();
 
 		type = *(PACKET_TYPE*)typeData;
+		type = (PACKET_TYPE)ntohl(type);
 		return type;
 	}
 
