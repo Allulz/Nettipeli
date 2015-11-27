@@ -4,8 +4,10 @@
 #include <string>
 #include <stdint.h>
 #include <sstream>
+#include "KeysInfo.h"
 
-enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID };
+enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID, KEYS };
+
 
 struct vec2i
 {
@@ -75,30 +77,60 @@ public:
 		//*rot = (float)ntohl(*rot);
 	}
 
-	static PACKET_TYPE deserializePacketType(std::string* data)
+
+	static PACKET_TYPE deserializePacketType(char* buf, unsigned int bufLen)
 	{
 		PACKET_TYPE type = NOTYPE;
 		char* typeData = (char*)malloc(sizeof(int32_t));
 		
-		typeData = (char*)data->substr(0, sizeof(int32_t)).c_str();
+		typeData = &buf[0];
 
 		type = *(PACKET_TYPE*)typeData;
 		type = (PACKET_TYPE)ntohl(type);
 		return type;
 	}
 
-	static int32_t deserializeClientID(std::string* data)
+	static int32_t deserializeInt(std::string* data)
 	{
-		int32_t id;
-		char* idData = (char*)malloc(sizeof(int32_t));
+		int32_t deserializedInt;
+		char* intData = (char*)malloc(sizeof(int32_t));
 
 		int index = sizeof(int32_t);
-		idData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+		intData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
 
-		id = *(int32_t*)idData;
-		id = ntohl(id);
-		return id;
+		deserializedInt = *(int32_t*)intData;
+		deserializedInt = ntohl(deserializedInt);
+		return deserializedInt;
 	}
+
+	static KEYS_INFO deserializeKeysInfo(char* buf, unsigned int bufLen)
+	{
+		KEYS_INFO deserializedKeysInfo;
+		int deserializedWASD[4];
+		char* wData = (char*)malloc(sizeof(int32_t));
+		char* aData = (char*)malloc(sizeof(int32_t));
+		char* sData = (char*)malloc(sizeof(int32_t));
+		char* dData = (char*)malloc(sizeof(int32_t));
+
+		char* keysData[] = {wData, aData, sData, dData};
+
+		int index = sizeof(int32_t);
+
+		for (int i = 0; i < 4; i++)
+		{
+			keysData[i] = &buf[index];
+			index += sizeof(int32_t);
+			deserializedWASD[i] = *(int32_t*)keysData[i];
+			deserializedWASD[i] = ntohl(deserializedWASD[i]);
+		}
+
+		deserializedKeysInfo.w = deserializedWASD[0];
+		deserializedKeysInfo.a = deserializedWASD[1];
+		deserializedKeysInfo.s = deserializedWASD[2];
+		deserializedKeysInfo.d = deserializedWASD[3];
+		return deserializedKeysInfo;
+	}
+
 
 private:
 	Serializer(){}

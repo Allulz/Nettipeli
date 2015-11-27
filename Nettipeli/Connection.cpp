@@ -87,8 +87,33 @@ int Connection::sendPosRot(SDL_Point postToSend, float rotToSend)
 	Serializer::serializeFloat(rotToSend, &serializedRotation);
 	std::string serializedData = serializedPacketType + serializedPos + serializedRotation;
 
-	iResult = send(connectSocket, serializedData.c_str(), (int)serializedData.length(), 0);
-	if (iResult == SOCKET_ERROR) 
+	iResult = sendData(&serializedData);
+	if (iResult != 0)
+		return 1;
+
+	return 0;
+}
+
+int Connection::sendKeyStates(KEYS_INFO keysInfo)
+{
+	int iResult;
+
+	std::string serializedPacketType, serializedKeys;
+	Serializer::serializePacketType(KEYS, &serializedPacketType);
+	Serializer::serializeKeysInfo(keysInfo, &serializedKeys);
+	std::string serializedData = serializedPacketType + serializedKeys;
+
+	iResult = sendData(&serializedData);
+	if (iResult != 0)
+		return 1;
+
+	return 0;
+}
+
+int Connection::sendData(std::string* dataToSend)
+{
+	int	iResult = send(connectSocket, dataToSend->c_str(), (int)dataToSend->length(), 0);
+	if (iResult == SOCKET_ERROR)
 	{
 		printf("send failed with error: %d\n", WSAGetLastError());
 		closesocket(connectSocket);

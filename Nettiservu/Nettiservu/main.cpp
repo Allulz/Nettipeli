@@ -273,19 +273,21 @@ void handleCommunicationWithClient(int clientID)
 		iResult = recv(clientSocket, recvbuf, recvbuflen, 0);
 		if (iResult > 0) 
 		{
-			std::string recvData;
-			recvData.assign(recvbuf, recvbuflen);
-			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
+			PACKET_TYPE packetType = Serializer::deserializePacketType(recvbuf, recvbuflen);
 
-			if (packetType == POSROT)
+			if (packetType == KEYS)
 			{
-				SendAlmostAll((char*)recvData.c_str(), recvData.size(), clientID);
+				KEYS_INFO keysInfo = Serializer::deserializeKeysInfo(recvbuf, recvbuflen);
+				if (keysInfo.w != 0)
+					printf("W");
+				if (keysInfo.a != 0)
+					printf("A");
+				if (keysInfo.s != 0)
+					printf("S");
+				if (keysInfo.d != 0)
+					printf("D");
 
-				vec2i pos;
-				float rot;
-				Serializer::deserializePosRot(&pos, &rot, &recvData);
-				printf("Pos received - x: %i - y: %i\nRotation received: %.2f\n", pos.x, pos.y, rot);
-
+				printf("\n");
 			}
 		}
 		else if (iResult == 0) 
@@ -325,7 +327,7 @@ int __cdecl main(void)
 		return 1;
 	}
 
-	int numberOfClients = 2;
+	int numberOfClients = 1;
 
 	iResult = listenForClients(numberOfClients, &listenSocket);
 	if (iResult != 0)

@@ -4,8 +4,9 @@
 #include <SDL.h>
 #include <string>
 #include <sstream>
+#include "KeysInfo.h"
 
-enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID };
+enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID, KEYS };
 
 class Serializer
 {
@@ -33,6 +34,36 @@ public:
 
 		buf->assign(p, index);
 	}
+
+	static void serializeInt(int32_t intToSerialize, std::string* buf)
+	{
+
+		char* p = (char*)malloc(sizeof(int32_t));
+		unsigned int index = 0;
+
+		*((int32_t*)(&p[index])) = htonl(intToSerialize);
+		index += sizeof((int32_t)intToSerialize);
+
+		buf->assign(p, index);
+	}
+
+
+	static void serializeKeysInfo(KEYS_INFO keysInfoToSerialize, std::string* buf)
+	{
+		char* p = (char*)malloc(4 * sizeof(int32_t));
+		unsigned int index = 0;
+		int keyValues[] = { keysInfoToSerialize.w, keysInfoToSerialize.a,
+			keysInfoToSerialize.s, keysInfoToSerialize.d };
+		
+		for (int i = 0; i < 4; i++)
+		{
+			*((int32_t*)(&p[index])) = htonl(keyValues[i]);
+			index += sizeof((int32_t)keyValues[i]);
+		}
+
+		buf->assign(p, index);
+	}
+
 
 	static void serializeFloat(float floatToSerialize, std::string* buf)
 	{
@@ -76,17 +107,17 @@ public:
 		return type;
 	}
 
-	static int32_t deserializeClientID(std::string* data)
+	static int32_t deserializeInt(std::string* data)
 	{
-		int32_t id;
-		char* idData = (char*)malloc(sizeof(int32_t));
+		int32_t deserializedInt;;
+		char* intData = (char*)malloc(sizeof(int32_t));
 
 		int index = sizeof(int32_t);
-		idData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+		intData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
 
-		id = *(int32_t*)idData;
-		id = ntohl(id);
-		return id;
+		deserializedInt = *(int32_t*)intData;
+		deserializedInt = ntohl(deserializedInt);
+		return deserializedInt;
 	}
 
 private:

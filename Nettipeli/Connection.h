@@ -12,6 +12,7 @@
 #include <list>
 
 #include "Serializer.h"
+#include "KeysInfo.h"
 
 class Connection
 {
@@ -23,6 +24,8 @@ public:
 
 	int initConnection();
 	int sendPosRot(SDL_Point postToSend, float rotToSend);
+	int sendKeyStates(KEYS_INFO keysInfo);
+	int sendData(std::string* dataToSend);
 
 	SOCKET* getServerSocket(){ return &connectSocket; }
 

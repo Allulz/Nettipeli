@@ -23,5 +23,8 @@
     <ClInclude Include="Serializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="KeysInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

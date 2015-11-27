@@ -18,6 +18,10 @@ SDL_Window* createWindow(std::string windowTitle, int width, int height);
 
 SDL_Renderer* createRenderer(SDL_Window* sdlWindow);
 
+
+
+KEYS_INFO *keysInfo = new KEYS_INFO;
+
 void handleComms()
 {
 	int iResult;
@@ -50,7 +54,7 @@ void handleComms()
 			}
 			if (packetType == CLIENT_ID)
 			{
-				int playerNumber = Serializer::deserializeClientID(&recvData);
+				int playerNumber = Serializer::deserializeInt(&recvData);
 				printf("Player number: %i\n", playerNumber);
 			}
 		}
@@ -136,6 +140,9 @@ int main(int argc, char* args[])
 			sprt.setBounds(dRect);
 			sprt.setOrigin(64.f, 64.f);
 
+			
+
+
 			float posX = 10.f, posY = 10.f;
 			float blltPosX = 0.f, blltPosY = 0.f;
 
@@ -171,18 +178,23 @@ int main(int argc, char* args[])
 				angle *= (180 / PI);
 				sprt.setRotation(angle);
 
+				
+				keysInfo->w = 0;
+				keysInfo->a = 0;
+				keysInfo->s = 0;
+				keysInfo->d = 0;
 
 				if (keyState[SDL_SCANCODE_ESCAPE])
 					quitProgram = true;
 
 				if (keyState[SDL_SCANCODE_W])
-					posY -= 1.f;
+					keysInfo->w = 1;
 				if (keyState[SDL_SCANCODE_A])
-					posX -= 1.f;
+					keysInfo->a = 1;
 				if (keyState[SDL_SCANCODE_S])
-					posY += 1.f;
+					keysInfo->s = 1;
 				if (keyState[SDL_SCANCODE_D])
-					posX += 1.f;
+					keysInfo->d = 1;
 				//if (mouseButtonState[SDL_BUTTON_LEFT])
 				//{
 				//	//bullets.spawnBullet(posX, posY);
@@ -198,11 +210,20 @@ int main(int argc, char* args[])
 
 				sprt.setPosition(posX, posY);
 
-				iResult = connection.sendPosRot(sprt.getPosition(), sprt.getRotation());
+				/*iResult = connection.sendPosRot(sprt.getPosition(), sprt.getRotation());
 				if (iResult != 0)
 				{
 					printf("Failed to send position to server!\n");
+				}*/
+
+
+				iResult = connection.sendKeyStates(*keysInfo);
+
+				if (iResult != 0)
+				{
+					printf("Failed to send key states to server!\n");
 				}
+
 				
 				//connection.listenServer();
 
