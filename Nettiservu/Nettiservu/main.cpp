@@ -337,7 +337,10 @@ int __cdecl main(void)
 		return 1;
 	}
 
+	if
+
 	sendClientIDs();
+
 
 	//Start communication threads for clients.
 	std::vector<std::thread*> clientThreads;
