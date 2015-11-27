@@ -3,10 +3,11 @@
 
 #include "Sprite.h"
 #include "Connection.h"
-#include "NetworkData.h"
+#include "bullet.h"
 #include <stdio.h>
 #include <thread>
 #include <map>
+
 
 Connection connection;
 std::map<int, Sprite*> sprites;
@@ -113,11 +114,15 @@ int main(int argc, char* args[])
 			SDL_Event sdlEvent;
 
 			uint8_t* keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
+			//uint8_t* mouseButtonState = (uint8_t*)SDL_GetMouseState(NULL);
 
 			Texture txtr;
 			Sprite sprt;
 			int mouseX = 0, mouseY = 0;
+			float difX, difY, magnitude;
 			const float PI = 3.14159265;
+			float velocityX, velocityY;
+
 
 			SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
 			txtr.loadImage(renderer, "groundtx.png");
@@ -132,6 +137,7 @@ int main(int argc, char* args[])
 			sprt.setOrigin(64.f, 64.f);
 
 			float posX = 10.f, posY = 10.f;
+			float blltPosX = 0.f, blltPosY = 0.f;
 
 			int clientID = 1;
 
@@ -155,6 +161,9 @@ int main(int argc, char* args[])
 
 					if (sdlEvent.type == SDL_MOUSEMOTION)
 						SDL_GetMouseState(&mouseX, &mouseY);
+
+				//	if (sdlEvent.type == SDL_MOUSEBUTTONDOWN || sdlEvent.type == SDL_MOUSEBUTTONUP)
+				//		//mouseButtonState = (uint8_t*)SDL_GetMouseState(NULL);
 				}
 
 
@@ -174,6 +183,18 @@ int main(int argc, char* args[])
 					posY += 1.f;
 				if (keyState[SDL_SCANCODE_D])
 					posX += 1.f;
+				//if (mouseButtonState[SDL_BUTTON_LEFT])
+				//{
+				//	//bullets.spawnBullet(posX, posY);
+				//	difX = mouseX - posX;
+				//	difY = mouseY - posY;
+				//	magnitude = sqrt(difX*difX + difY*difY);
+				//	velocityX = difX / magnitude;
+				//	velocityY = difY / magnitude;
+
+
+
+				//}
 
 				sprt.setPosition(posX, posY);
 
