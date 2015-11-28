@@ -14,6 +14,7 @@
 #include <sstream>
 
 #include "Serializer.h"
+#include "Player.h"
 
 #define DEFAULT_BUFLEN 512
 #define USED_PORT "27015"
@@ -21,6 +22,7 @@
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 std::map<int, SOCKET *> activeClients;
+std::map<int, Player*> players;
 std::mutex socketlistmtx;
 
 char buf[DEFAULT_BUFLEN];
@@ -231,6 +233,7 @@ int listenForClients(int numberOfClients, SOCKET *listenSocket)
 		}
 
 		AddActiveSocket(connectionNumber, new SOCKET(ClientSocket));
+		players.insert(std::make_pair(connectionNumber, new Player(connectionNumber)));
 
 		std::string clientIPPort = getSockPortAndIP(&ClientSocket);
 
@@ -259,12 +262,14 @@ void handleCommunicationWithClient(int clientID)
 {
 	int iResult;
 	int iSendResult;
-	char recvbuf[DEFAULT_BUFLEN];
+	char recvbuf[DEFAULT_BUFLEN], sendbuf[DEFAULT_BUFLEN];
 	//clear the buffer by filling null, it might have previously received data
 	memset(recvbuf, '\0', DEFAULT_BUFLEN);
-	int recvbuflen = DEFAULT_BUFLEN;
+	memset(sendbuf, '\0', DEFAULT_BUFLEN);
+	int recvbuflen = DEFAULT_BUFLEN, sendbuflen = DEFAULT_BUFLEN;
 
 	SOCKET clientSocket = *activeClients[clientID];
+	Player* clientPlayer = players[clientID];
 
 	printf("thread started for client #%i\n", clientID);
 	// Receive until the peer shuts down the connection
@@ -278,16 +283,15 @@ void handleCommunicationWithClient(int clientID)
 			if (packetType == KEYS)
 			{
 				KEYS_INFO keysInfo = Serializer::deserializeKeysInfo(recvbuf, recvbuflen);
-				if (keysInfo.w != 0)
-					printf("W");
-				if (keysInfo.a != 0)
-					printf("A");
-				if (keysInfo.s != 0)
-					printf("S");
-				if (keysInfo.d != 0)
-					printf("D");
+				clientPlayer->handleInput(keysInfo);
 
-				printf("\n");
+				std::string serializedPacketType, serializedClientID, serializedPos, serializedRot;
+				Serializer::serializePacketType(POSROT, &serializedPacketType);
+				Serializer::serializeInt(clientID, &serializedClientID);
+				Serializer::serializePos(clientPlayer->getPos(), &serializedPos);
+				Serializer::serializeFloat(clientPlayer->getRot(), &serializedRot);
+				std::string serializedData = serializedPacketType + serializedClientID + serializedPos + serializedRot;
+				SendAll((char*)serializedData.c_str(), serializedData.length());
 			}
 		}
 		else if (iResult == 0) 
@@ -307,6 +311,7 @@ void handleCommunicationWithClient(int clientID)
 
 		//clear the buffer by filling null, it might have previously received data
 		memset(recvbuf, '\0', DEFAULT_BUFLEN);
+		memset(sendbuf, '\0', DEFAULT_BUFLEN);
 	}
 
 	DeleteSocket(clientID);
@@ -327,7 +332,7 @@ int __cdecl main(void)
 		return 1;
 	}
 
-	int numberOfClients = 1;
+	int numberOfClients = 2;
 
 	iResult = listenForClients(numberOfClients, &listenSocket);
 	if (iResult != 0)
@@ -336,8 +341,6 @@ int __cdecl main(void)
 		system("PAUSE");
 		return 1;
 	}
-
-	if
 
 	sendClientIDs();
 

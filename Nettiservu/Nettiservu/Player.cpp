@@ -5,7 +5,17 @@
 
 Player::Player()
 {
+	x = 0;
+	y = 0;
+	rot = 0.f;
+	clientID = -1;
+}
 
+Player::Player(int id)
+{
+	rot = 0.f;
+	clientID = id;
+	initSpawnPos();
 }
 
 
@@ -13,31 +23,44 @@ Player::~Player()
 {
 }
 
-vec2i Player::plrSpawnLocation(int connectionNumber)
+void Player::handleInput(KEYS_INFO playerInput)
+{
+	if (playerInput.w != 0)
+		y--;
+	if (playerInput.a != 0)
+		x--;
+	if (playerInput.s != 0)
+		y++;
+	if (playerInput.d != 0)
+		x++;
+}
+
+vec2i Player::getPos()
+{
+	vec2i playerPos;
+	playerPos.x = x;
+	playerPos.y = y;
+	return playerPos;
+}
+
+
+//Private
+
+void Player::initSpawnPos()
 {
 
 	vec2i plrPos;
 	
 
-	if (connectionNumber == 0)
+	if (clientID == 0)
 	{
 		x = 10;
 		y = 10;
 	}
 
-	if (connectionNumber == 1)
+	if (clientID == 1)
 	{
 		x = 600;
 		y = 10;
 	}
-
-	plrPos.x = x;
-	plrPos.y = y;
-
-	return plrPos;
-}
-
-void plrMove()
-{
-
 }

@@ -73,18 +73,18 @@ public:
 		*buf = strStrm.str();
 	}
 
-	static void deserializePosRot(SDL_Point* pos, float* rot, std::string* data)
+	static void deserializePosRot(SDL_Point* pos, float* rot, char* data)
 	{
 		char* xPosData = (char*)malloc(sizeof(int32_t));
 		char* yPosData = (char*)malloc(sizeof(int32_t));
 		std::stringstream rotStream;
 
-		int index = sizeof(int32_t);
-		xPosData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+		int index = 2*sizeof(int32_t);
+		xPosData = &data[index];
 		index += sizeof(int32_t);
-		yPosData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+		yPosData = &data[index];
 		index += sizeof(int32_t);
-		rotStream << data->substr(index, index + sizeof(float));
+		rotStream << &data[index];
 		index += sizeof(float);
 
 		pos->x = *((int32_t*)xPosData);
@@ -95,25 +95,25 @@ public:
 		//*rot = (float)ntohl(*rot);
 	}
 
-	static PACKET_TYPE deserializePacketType(std::string* data)
+	static PACKET_TYPE deserializePacketType(char* data)
 	{
 		PACKET_TYPE type = NOTYPE;
 		char* typeData = (char*)malloc(sizeof(int32_t));
 
-		typeData = (char*)data->substr(0, sizeof(int32_t)).c_str();
+		typeData = &data[0];
 
 		type = *(PACKET_TYPE*)typeData;
 		type = (PACKET_TYPE)ntohl(type);
 		return type;
 	}
 
-	static int32_t deserializeInt(std::string* data)
+	static int32_t deserializeInt(char* data)
 	{
 		int32_t deserializedInt;;
 		char* intData = (char*)malloc(sizeof(int32_t));
 
 		int index = sizeof(int32_t);
-		intData = (char*)data->substr(index, index + sizeof(int32_t)).c_str();
+		intData = &data[index];
 
 		deserializedInt = *(int32_t*)intData;
 		deserializedInt = ntohl(deserializedInt);

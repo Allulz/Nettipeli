@@ -2,18 +2,11 @@
 
 #include <Windows.h>
 #include <string>
-#include <stdint.h>
 #include <sstream>
 #include "KeysInfo.h"
+#include "Vec2.h"
 
 enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID, KEYS };
-
-
-struct vec2i
-{
-	int32_t x;
-	int32_t y;
-};
 
 class Serializer
 {
@@ -29,15 +22,35 @@ public:
 		buf->assign(p, index);
 	}
 
-	static void serializePos(int x, int y, std::string* buf)
+	static void serializePos(vec2i pos, std::string* buf)
 	{
 		char* p = (char*)malloc(2 * sizeof(int32_t));
 		unsigned int index = 0;
 
-		*((int32_t*)(&p[index])) = htonl(x);
-		index += sizeof((int32_t)x);
-		*((int32_t*)(&p[index])) = htonl(y);
-		index += sizeof((int32_t)y);
+		*((int32_t*)(&p[index])) = htonl(pos.x);
+		index += sizeof((int32_t)pos.x);
+		*((int32_t*)(&p[index])) = htonl(pos.y);
+		index += sizeof((int32_t)pos.y);
+
+		buf->assign(p, index);
+	}
+
+	static void serializeFloat(float floatToSerialize, std::string* buf)
+	{
+		std::stringstream strStrm;
+		//float temp = htonl(floatToSerialize);
+		strStrm << floatToSerialize;
+		*buf = strStrm.str();
+	}
+
+	static void serializeInt(int32_t intToSerialize, std::string* buf)
+	{
+
+		char* p = (char*)malloc(sizeof(int32_t));
+		unsigned int index = 0;
+
+		*((int32_t*)(&p[index])) = htonl(intToSerialize);
+		index += sizeof((int32_t)intToSerialize);
 
 		buf->assign(p, index);
 	}

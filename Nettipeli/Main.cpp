@@ -9,8 +9,14 @@
 #include <map>
 
 
+//The window we'll be rendering to
+SDL_Window* window = nullptr;
+//Renderer
+SDL_Renderer* renderer;
+
 Connection connection;
-std::map<int, Sprite*> sprites;
+std::map<int, Sprite*> players;
+Texture* txtr = new Texture;
 
 bool initializeSDL();
 
@@ -18,9 +24,22 @@ SDL_Window* createWindow(std::string windowTitle, int width, int height);
 
 SDL_Renderer* createRenderer(SDL_Window* sdlWindow);
 
+void addPlayer(int playerID)
+{
+	Sprite* sprt = new Sprite;
+	sprt->setTexture(*txtr);
 
+	SDL_Rect dRect;
+	dRect.x = 0.f;
+	dRect.y = 0.f;
+	dRect.w = 64.f;
+	dRect.h = 64.f;
+	sprt->setBounds(dRect);
+	sprt->setOrigin(32.f, 32.f);
 
-KEYS_INFO *keysInfo = new KEYS_INFO;
+	players.insert(std::make_pair(playerID, sprt));
+	printf("Added player #%i\n", playerID);
+}
 
 void handleComms()
 {
@@ -40,21 +59,28 @@ void handleComms()
 		iResult = recv(serverSocket, recvbuf, recvbuflen, 0);
 		if (iResult > 0)
 		{
-			std::string recvData;
-			recvData.assign(recvbuf, recvbuflen);
-			PACKET_TYPE packetType = Serializer::deserializePacketType(&recvData);
+			PACKET_TYPE packetType = Serializer::deserializePacketType(recvbuf);
 			if (packetType == POSROT)
 			{
-				SDL_Point pos;
-				float rot;
-				Serializer::deserializePosRot(&pos, &rot, &recvData);
-				printf("Pos received - x: %i - y: %i\nRotation received: %.2f\n", pos.x, pos.y, rot);
-				sprites[1]->setPosition(pos);
-				sprites[1]->setRotation(rot);
+				int playerID = Serializer::deserializeInt(recvbuf);
+				if (playerID > players.size())
+					printf("WTF: Player number - %i!\n", playerID);
+				else
+				{
+					if(playerID == players.size())
+						addPlayer(playerID);
+
+					SDL_Point pos;
+					float rot;
+					Serializer::deserializePosRot(&pos, &rot, recvbuf);
+					printf("Pos for player #%i received - x: %i - y: %i\nRotation received: %.2f\n", playerID, pos.x, pos.y, rot);
+					players[playerID]->setPosition(pos);
+					players[playerID]->setRotation(rot);
+				}
 			}
 			if (packetType == CLIENT_ID)
 			{
-				int playerNumber = Serializer::deserializeInt(&recvData);
+				int playerNumber = Serializer::deserializeInt(recvbuf);
 				printf("Player number: %i\n", playerNumber);
 			}
 		}
@@ -87,11 +113,6 @@ int main(int argc, char* args[])
 		SDL_Delay(4000);
 	}
 
-	//The window we'll be rendering to
-	SDL_Window* window = nullptr;
-	//Renderer
-	SDL_Renderer* renderer;
-
 	if (!initializeSDL())
 	{
 		printf("Failed to initialize! Exiting program.\n");
@@ -118,10 +139,9 @@ int main(int argc, char* args[])
 			SDL_Event sdlEvent;
 
 			uint8_t* keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
+			KEYS_INFO keysInfo;
 			//uint8_t* mouseButtonState = (uint8_t*)SDL_GetMouseState(NULL);
 
-			Texture txtr;
-			Sprite sprt;
 			int mouseX = 0, mouseY = 0;
 			float difX, difY, magnitude;
 			const float PI = 3.14159265;
@@ -129,29 +149,11 @@ int main(int argc, char* args[])
 
 
 			SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
-			txtr.loadImage(renderer, "groundtx.png");
-			sprt.setTexture(txtr);
 
-			SDL_Rect dRect;
-			dRect.x = 10.f;
-			dRect.y = 10.f;
-			dRect.w = 128.f;
-			dRect.h = 128.f;
-			sprt.setBounds(dRect);
-			sprt.setOrigin(64.f, 64.f);
-
-			
-
-
-			float posX = 10.f, posY = 10.f;
 			float blltPosX = 0.f, blltPosY = 0.f;
 
-			int clientID = 1;
-
-			sprites.insert(std::make_pair(clientID, new Sprite));
-			sprites[1]->setTexture(txtr);
-			sprites[1]->setBounds(dRect);
-			sprites[1]->setOrigin(64.f, 64.f);
+			txtr->loadImage(renderer, "groundtx.png");
+			addPlayer(0);
 
 			std::thread commThread(handleComms);
 			commThread.detach();
@@ -174,27 +176,27 @@ int main(int argc, char* args[])
 				}
 
 
-				float angle = std::atan2(((double)mouseY - (posY+sprt.getOrigin().y)), ((double)mouseX - (posX+sprt.getOrigin().x)));
+				/*float angle = std::atan2(((double)mouseY - (posY+sprt.getOrigin().y)), ((double)mouseX - (posX+sprt.getOrigin().x)));
 				angle *= (180 / PI);
 				sprt.setRotation(angle);
-
+				*/
 				
-				keysInfo->w = 0;
-				keysInfo->a = 0;
-				keysInfo->s = 0;
-				keysInfo->d = 0;
+				keysInfo.w = 0;
+				keysInfo.a = 0;
+				keysInfo.s = 0;
+				keysInfo.d = 0;
 
 				if (keyState[SDL_SCANCODE_ESCAPE])
 					quitProgram = true;
 
 				if (keyState[SDL_SCANCODE_W])
-					keysInfo->w = 1;
+					keysInfo.w = 1;
 				if (keyState[SDL_SCANCODE_A])
-					keysInfo->a = 1;
+					keysInfo.a = 1;
 				if (keyState[SDL_SCANCODE_S])
-					keysInfo->s = 1;
+					keysInfo.s = 1;
 				if (keyState[SDL_SCANCODE_D])
-					keysInfo->d = 1;
+					keysInfo.d = 1;
 				//if (mouseButtonState[SDL_BUTTON_LEFT])
 				//{
 				//	//bullets.spawnBullet(posX, posY);
@@ -208,8 +210,6 @@ int main(int argc, char* args[])
 
 				//}
 
-				sprt.setPosition(posX, posY);
-
 				/*iResult = connection.sendPosRot(sprt.getPosition(), sprt.getRotation());
 				if (iResult != 0)
 				{
@@ -217,7 +217,7 @@ int main(int argc, char* args[])
 				}*/
 
 
-				iResult = connection.sendKeyStates(*keysInfo);
+				iResult = connection.sendKeyStates(keysInfo);
 
 				if (iResult != 0)
 				{
@@ -231,8 +231,7 @@ int main(int argc, char* args[])
 				SDL_RenderClear(renderer);
 
 				//Render sprite to screen
-				sprt.draw(renderer);
-				for (std::map<int, Sprite*>::iterator it = sprites.begin(); it != sprites.end(); it++)
+				for (std::map<int, Sprite*>::iterator it = players.begin(); it != players.end(); it++)
 				{
 					(*it).second->draw(renderer);
 				}
