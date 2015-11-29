@@ -146,7 +146,7 @@ public:
 		deserializedKeysInfo.s = deserializedWASD[2];
 		deserializedKeysInfo.d = deserializedWASD[3];
 		rotStream >> *rot;
-		*rot = (float)ntohl(*rot);
+		//*rot = (float)ntohl(*rot);
 
 		return deserializedKeysInfo;
 	}

@@ -85,6 +85,13 @@ void handleComms()
 			{
 				playerNumber = Serializer::deserializeInt(recvbuf);
 				printf("Player number: %i\n", playerNumber);
+
+				int prevSize = players.size();
+				int tempDif = playerNumber - prevSize;
+				for (int i = 0; i <= tempDif; i++)
+				{
+					addPlayer(prevSize + i);
+				}
 			}
 		}
 		else if (iResult == 0)
@@ -205,6 +212,10 @@ int main(int argc, char* args[])
 
 				float angle = std::atan2(((double)mouseY - (players[playerNumber]->getPosition().y + players[playerNumber]->getOrigin().y)), ((double)mouseX - (players[playerNumber]->getPosition().x + players[playerNumber]->getOrigin().x)));
 				angle *= (180 / PI);
+				while (angle < 0)
+				{
+					angle += 360;
+				}
 
 				//}
 

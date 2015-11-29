@@ -12,6 +12,7 @@ public:
 	~Player();
 
 	void handleInput(KEYS_INFO playerInput);
+	void setRot(float rotToSet){ rot = rotToSet; }
 
 	vec2i getPos();
 	float getRot(){ return rot; }

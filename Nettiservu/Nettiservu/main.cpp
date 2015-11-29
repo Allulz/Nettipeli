@@ -35,26 +35,6 @@ struct addrinfo hints;
 int slen = sizeof(hints);
 SOCKET connectSocket;
 
-//int sendPos(int x, int y)
-//{
-//	int iResult;
-//
-//	std::string serializedData;
-//	Serializer::serializePos(x, y, &serializedData);
-//
-//	iResult = send(connectSocket, serializedData.c_str(), (int)serializedData.length(), 0);
-//	if (iResult == SOCKET_ERROR)
-//	{
-//		printf("send failed with error: %d\n", WSAGetLastError());
-//		closesocket(connectSocket);
-//		WSACleanup();
-//		return 1;
-//	}
-//
-//	return 0;
-//}
-
-
 
 int displayPortAndIP()
 {
@@ -270,7 +250,6 @@ void handleCommunicationWithClient(int clientID)
 
 	SOCKET clientSocket = *activeClients[clientID];
 	Player* clientPlayer = players[clientID];
-	float rot;
 
 	printf("thread started for client #%i\n", clientID);
 	// Receive until the peer shuts down the connection
@@ -283,8 +262,12 @@ void handleCommunicationWithClient(int clientID)
 
 			if (packetType == KEYS)
 			{
+				float rot;
 				KEYS_INFO keysInfo = Serializer::deserializeKeysInfo(recvbuf, &rot ,recvbuflen);
 				clientPlayer->handleInput(keysInfo);
+				clientPlayer->setRot(rot);
+
+				printf("Rot rcvd: %.2f\n", rot);
 
 				std::string serializedPacketType, serializedClientID, serializedPos, serializedRot;
 				Serializer::serializePacketType(POSROT, &serializedPacketType);
