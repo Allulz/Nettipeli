@@ -92,7 +92,7 @@ public:
 		rotStream >> *rot;
 		pos->x = ntohl(pos->x);
 		pos->y = ntohl(pos->y);
-		//*rot = (float)ntohl(*rot);
+		*rot = (float)ntohl(*rot);
 	}
 
 	static PACKET_TYPE deserializePacketType(char* data)

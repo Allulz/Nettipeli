@@ -116,7 +116,7 @@ public:
 		return deserializedInt;
 	}
 
-	static KEYS_INFO deserializeKeysInfo(char* buf, unsigned int bufLen)
+	static KEYS_INFO deserializeKeysInfo(char* buf, float* rot, unsigned int bufLen)
 	{
 		KEYS_INFO deserializedKeysInfo;
 		int deserializedWASD[4];
@@ -124,6 +124,7 @@ public:
 		char* aData = (char*)malloc(sizeof(int32_t));
 		char* sData = (char*)malloc(sizeof(int32_t));
 		char* dData = (char*)malloc(sizeof(int32_t));
+		std::stringstream rotStream;
 
 		char* keysData[] = {wData, aData, sData, dData};
 
@@ -137,10 +138,16 @@ public:
 			deserializedWASD[i] = ntohl(deserializedWASD[i]);
 		}
 
+		rotStream << &buf[index];
+		index += sizeof(float);
+
 		deserializedKeysInfo.w = deserializedWASD[0];
 		deserializedKeysInfo.a = deserializedWASD[1];
 		deserializedKeysInfo.s = deserializedWASD[2];
 		deserializedKeysInfo.d = deserializedWASD[3];
+		rotStream >> *rot;
+		*rot = (float)ntohl(*rot);
+
 		return deserializedKeysInfo;
 	}
 

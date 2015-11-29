@@ -16,6 +16,7 @@ SDL_Renderer* renderer;
 
 Connection connection;
 std::map<int, Sprite*> players;
+int playerNumber;
 Texture* txtr = new Texture;
 
 bool initializeSDL();
@@ -70,9 +71,11 @@ void handleComms()
 					if(playerID == players.size())
 						addPlayer(playerID);
 
-					SDL_Point pos;
 					float rot;
+					SDL_Point pos;
+
 					Serializer::deserializePosRot(&pos, &rot, recvbuf);
+
 					printf("Pos for player #%i received - x: %i - y: %i\nRotation received: %.2f\n", playerID, pos.x, pos.y, rot);
 					players[playerID]->setPosition(pos);
 					players[playerID]->setRotation(rot);
@@ -80,7 +83,7 @@ void handleComms()
 			}
 			if (packetType == CLIENT_ID)
 			{
-				int playerNumber = Serializer::deserializeInt(recvbuf);
+				playerNumber = Serializer::deserializeInt(recvbuf);
 				printf("Player number: %i\n", playerNumber);
 			}
 		}
@@ -175,12 +178,6 @@ int main(int argc, char* args[])
 				//		//mouseButtonState = (uint8_t*)SDL_GetMouseState(NULL);
 				}
 
-
-				/*float angle = std::atan2(((double)mouseY - (posY+sprt.getOrigin().y)), ((double)mouseX - (posX+sprt.getOrigin().x)));
-				angle *= (180 / PI);
-				sprt.setRotation(angle);
-				*/
-				
 				keysInfo.w = 0;
 				keysInfo.a = 0;
 				keysInfo.s = 0;
@@ -206,7 +203,8 @@ int main(int argc, char* args[])
 				//	velocityX = difX / magnitude;
 				//	velocityY = difY / magnitude;
 
-
+				float angle = std::atan2(((double)mouseY - (players[playerNumber]->getPosition().y + players[playerNumber]->getOrigin().y)), ((double)mouseX - (players[playerNumber]->getPosition().x + players[playerNumber]->getOrigin().x)));
+				angle *= (180 / PI);
 
 				//}
 
@@ -217,14 +215,13 @@ int main(int argc, char* args[])
 				}*/
 
 
-				iResult = connection.sendKeyStates(keysInfo);
+				iResult = connection.sendKeyStates(keysInfo, angle);
 
 				if (iResult != 0)
 				{
 					printf("Failed to send key states to server!\n");
 				}
 
-				
 				//connection.listenServer();
 
 				//Clear screen

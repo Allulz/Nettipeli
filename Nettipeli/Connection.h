@@ -24,7 +24,7 @@ public:
 
 	int initConnection();
 	int sendPosRot(SDL_Point postToSend, float rotToSend);
-	int sendKeyStates(KEYS_INFO keysInfo);
+	int sendKeyStates(KEYS_INFO keysInfo, float rotToSend);
 	int sendData(std::string* dataToSend);
 
 	SOCKET* getServerSocket(){ return &connectSocket; }

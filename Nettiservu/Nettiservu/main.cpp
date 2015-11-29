@@ -270,6 +270,7 @@ void handleCommunicationWithClient(int clientID)
 
 	SOCKET clientSocket = *activeClients[clientID];
 	Player* clientPlayer = players[clientID];
+	float rot;
 
 	printf("thread started for client #%i\n", clientID);
 	// Receive until the peer shuts down the connection
@@ -282,7 +283,7 @@ void handleCommunicationWithClient(int clientID)
 
 			if (packetType == KEYS)
 			{
-				KEYS_INFO keysInfo = Serializer::deserializeKeysInfo(recvbuf, recvbuflen);
+				KEYS_INFO keysInfo = Serializer::deserializeKeysInfo(recvbuf, &rot ,recvbuflen);
 				clientPlayer->handleInput(keysInfo);
 
 				std::string serializedPacketType, serializedClientID, serializedPos, serializedRot;
@@ -291,6 +292,7 @@ void handleCommunicationWithClient(int clientID)
 				Serializer::serializePos(clientPlayer->getPos(), &serializedPos);
 				Serializer::serializeFloat(clientPlayer->getRot(), &serializedRot);
 				std::string serializedData = serializedPacketType + serializedClientID + serializedPos + serializedRot;
+
 				SendAll((char*)serializedData.c_str(), serializedData.length());
 			}
 		}

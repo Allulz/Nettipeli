@@ -94,14 +94,15 @@ int Connection::sendPosRot(SDL_Point postToSend, float rotToSend)
 	return 0;
 }
 
-int Connection::sendKeyStates(KEYS_INFO keysInfo)
+int Connection::sendKeyStates(KEYS_INFO keysInfo, float rotToSend)
 {
 	int iResult;
 
-	std::string serializedPacketType, serializedKeys;
+	std::string serializedPacketType, serializedKeys, serializedRotation;
 	Serializer::serializePacketType(KEYS, &serializedPacketType);
 	Serializer::serializeKeysInfo(keysInfo, &serializedKeys);
-	std::string serializedData = serializedPacketType + serializedKeys;
+	Serializer::serializeFloat(rotToSend, &serializedRotation);
+	std::string serializedData = serializedPacketType + serializedKeys + serializedRotation;
 
 	iResult = sendData(&serializedData);
 	if (iResult != 0)
