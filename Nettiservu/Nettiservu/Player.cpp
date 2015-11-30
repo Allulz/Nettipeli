@@ -7,12 +7,20 @@ Player::Player()
 {
 	x = 0;
 	y = 0;
+	width = 32;
+	height = 32;
+	origin.x = 16;
+	origin.y = 16;
 	rot = 0.f;
 	clientID = -1;
 }
 
 Player::Player(int id)
 {
+	width = 32;
+	height = 32;
+	origin.x = 16;
+	origin.y = 16;
 	rot = 0.f;
 	clientID = id;
 	initSpawnPos();
@@ -33,6 +41,12 @@ void Player::handleInput(KEYS_INFO playerInput)
 		y++;
 	if (playerInput.d != 0)
 		x++;
+}
+
+void Player::setOrigin(int x, int y)
+{
+	origin.x = x;
+	origin.y = y;
 }
 
 vec2i Player::getPos()

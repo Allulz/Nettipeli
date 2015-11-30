@@ -6,7 +6,7 @@
 #include <sstream>
 #include "KeysInfo.h"
 
-enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID, KEYS };
+enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID, KEYS, PEWPEW, STOP_PEW };
 
 class Serializer
 {
@@ -93,6 +93,25 @@ public:
 		pos->x = ntohl(pos->x);
 		pos->y = ntohl(pos->y);
 		//*rot = (float)ntohl(*rot);
+	}
+
+	static SDL_Point deserializePos(char* data)
+	{
+		SDL_Point pos;
+		char* xPosData = (char*)malloc(sizeof(int32_t));
+		char* yPosData = (char*)malloc(sizeof(int32_t));
+
+		int index = 2 * sizeof(int32_t);
+		xPosData = &data[index];
+		index += sizeof(int32_t);
+		yPosData = &data[index];
+		index += sizeof(int32_t);
+
+		pos.x = *((int32_t*)xPosData);
+		pos.y = *((int32_t*)yPosData);
+		pos.x = ntohl(pos.x);
+		pos.y = ntohl(pos.y);
+		return pos;
 	}
 
 	static PACKET_TYPE deserializePacketType(char* data)

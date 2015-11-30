@@ -15,14 +15,19 @@
 
 #include "Serializer.h"
 #include "Player.h"
+#include "Bullet.h"
 
 #define DEFAULT_BUFLEN 512
 #define USED_PORT "27015"
+
+#define CLIENT_WINDOW_W 800
+#define CLIENT_WINDOW_H 600
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 std::map<int, SOCKET *> activeClients;
 std::map<int, Player*> players;
+std::map<int, Bullet*> bullets;
 std::mutex socketlistmtx;
 
 char buf[DEFAULT_BUFLEN];
@@ -238,6 +243,98 @@ void sendClientIDs()
 	}
 }
 
+void initBulletList(int bulletsAmount)
+{
+	for (int i = 0; i < bulletsAmount; i++)
+	{
+		bullets.insert(std::make_pair(i, new Bullet(i)));
+	}
+}
+
+bool onScreen(vec2i pos)
+{
+	if (pos.x > CLIENT_WINDOW_W)
+		return false;
+	if (pos.x < 0)
+		return false;
+	if (pos.y > CLIENT_WINDOW_H)
+		return false;
+	if (pos.y < 0)
+		return false;
+
+	return true;
+}
+
+void updateBullets()
+{
+	std::string serializedPacketType, serializedBulletID, serializedBulletPos;
+	std::string serializedData;
+	for (int i = 0; i < bullets.size(); i++)
+	{
+		if (bullets[i]->isOn())
+		{
+			vec2i bulletPos;
+			bulletPos.x = bullets[i]->getPos().x;
+			bulletPos.y = bullets[i]->getPos().y;
+
+			Serializer::serializeInt(bullets[i]->getID(), &serializedBulletID);
+
+			bullets[i]->update();
+			if ((!onScreen(bulletPos)))
+			{
+				Serializer::serializePacketType(STOP_PEW, &serializedPacketType);
+				serializedData = serializedPacketType + serializedBulletID;
+				bullets[i]->setOnOff(false);
+			}
+			else
+			{
+				Serializer::serializePacketType(PEWPEW, &serializedPacketType);
+				Serializer::serializePos(bulletPos, &serializedBulletPos);
+				serializedData = serializedPacketType + serializedBulletID + serializedBulletPos;
+			}
+
+			SendAll((char*)serializedData.c_str(), serializedData.length());
+		}
+	}
+}
+
+void shootBullet(int clientID)
+{
+	Player* shootingPlayer = players[clientID];
+	int playerWidth = shootingPlayer->getWidth();
+	int playerHeight = shootingPlayer->getHeight();
+	vec2f playerPos;
+	playerPos.x = shootingPlayer->getPos().x;
+	playerPos.y = shootingPlayer->getPos().y;
+	vec2f playerOrigin;
+	playerOrigin.x= shootingPlayer->getOrigin().x;
+	playerOrigin.y = shootingPlayer->getOrigin().y;
+
+
+	vec2f bulletSpawnPos;
+	float bulletDirAngle = shootingPlayer->getRot();
+	float bulletDirRad = Convert::degreeToRadian(bulletDirAngle);
+
+	bulletSpawnPos.x = std::cos(bulletDirRad);
+	bulletSpawnPos.y = std::sin(bulletDirRad);
+	vec2f bulletSpawnNormlzd = VectorOperations::normalizeVec2f(bulletSpawnPos);
+	bulletSpawnNormlzd.x = bulletSpawnNormlzd.x * (0.5f * playerWidth);
+	bulletSpawnNormlzd.y = bulletSpawnNormlzd.y * (0.5f * playerHeight);
+
+	bulletSpawnPos = (playerPos + playerOrigin) + bulletSpawnNormlzd;
+
+	for (int i = 0; i < bullets.size(); i++)
+	{
+		if (!(bullets[i]->isOn()))
+		{
+			bullets[i]->setOnOff(true);
+			bullets[i]->setPos(bulletSpawnPos);
+			bullets[i]->setDirection(bulletDirAngle);
+			break;
+		}
+	}
+}
+
 void handleCommunicationWithClient(int clientID)
 {
 	int iResult;
@@ -267,8 +364,6 @@ void handleCommunicationWithClient(int clientID)
 				clientPlayer->handleInput(keysInfo);
 				clientPlayer->setRot(rot);
 
-				printf("Rot rcvd: %.2f\n", rot);
-
 				std::string serializedPacketType, serializedClientID, serializedPos, serializedRot;
 				Serializer::serializePacketType(POSROT, &serializedPacketType);
 				Serializer::serializeInt(clientID, &serializedClientID);
@@ -277,6 +372,12 @@ void handleCommunicationWithClient(int clientID)
 				std::string serializedData = serializedPacketType + serializedClientID + serializedPos + serializedRot;
 
 				SendAll((char*)serializedData.c_str(), serializedData.length());
+			}
+
+			if (packetType == PEWPEW)
+			{
+				printf("Pewpew! PEW!\n");
+				shootBullet(clientID);
 			}
 		}
 		else if (iResult == 0) 
@@ -317,7 +418,7 @@ int __cdecl main(void)
 		return 1;
 	}
 
-	int numberOfClients = 2;
+	int numberOfClients = 1;
 
 	iResult = listenForClients(numberOfClients, &listenSocket);
 	if (iResult != 0)
@@ -329,12 +430,20 @@ int __cdecl main(void)
 
 	sendClientIDs();
 
+	int maxNumberOfBullets = 100;
+	initBulletList(maxNumberOfBullets);
 
 	//Start communication threads for clients.
 	std::vector<std::thread*> clientThreads;
 	for (int i = 0; i < numberOfClients; i++)
 	{
 			clientThreads.push_back(new std::thread(handleCommunicationWithClient, i));
+	}
+
+	bool gameOn = true;
+	while (gameOn)
+	{
+		updateBullets();
 	}
 
 	//Wait for client threads to finish.

@@ -16,8 +16,10 @@ SDL_Renderer* renderer;
 
 Connection connection;
 std::map<int, Sprite*> players;
+std::map<int, Bullet*> bullets;
 int playerNumber;
-Texture* txtr = new Texture;
+Texture* playerTex = new Texture;
+Texture* bulletTex = new Texture;
 
 bool initializeSDL();
 
@@ -28,18 +30,26 @@ SDL_Renderer* createRenderer(SDL_Window* sdlWindow);
 void addPlayer(int playerID)
 {
 	Sprite* sprt = new Sprite;
-	sprt->setTexture(*txtr);
+	sprt->setTexture(*playerTex);
 
 	SDL_Rect dRect;
 	dRect.x = 0.f;
 	dRect.y = 0.f;
-	dRect.w = 64.f;
-	dRect.h = 64.f;
+	dRect.w = 32.f;
+	dRect.h = 32.f;
 	sprt->setBounds(dRect);
-	sprt->setOrigin(32.f, 32.f);
+	sprt->setOrigin(16.f, 16.f);
 
 	players.insert(std::make_pair(playerID, sprt));
 	printf("Added player #%i\n", playerID);
+}
+
+void initBulletList(int bulletsAmount)
+{
+	for (int i = 0; i < bulletsAmount; i++)
+	{
+		bullets.insert(std::make_pair(i, new Bullet(i, bulletTex)));
+	}
 }
 
 void handleComms()
@@ -76,12 +86,12 @@ void handleComms()
 
 					Serializer::deserializePosRot(&pos, &rot, recvbuf);
 
-					printf("Pos for player #%i received - x: %i - y: %i\nRotation received: %.2f\n", playerID, pos.x, pos.y, rot);
+					//printf("Pos for player #%i received - x: %i - y: %i\nRotation received: %.2f\n", playerID, pos.x, pos.y, rot);
 					players[playerID]->setPosition(pos);
 					players[playerID]->setRotation(rot);
 				}
 			}
-			if (packetType == CLIENT_ID)
+			else if (packetType == CLIENT_ID)
 			{
 				playerNumber = Serializer::deserializeInt(recvbuf);
 				printf("Player number: %i\n", playerNumber);
@@ -93,6 +103,20 @@ void handleComms()
 					addPlayer(prevSize + i);
 				}
 			}
+			else if (packetType == PEWPEW)
+			{
+				int bulletID = Serializer::deserializeInt(recvbuf);
+				SDL_Point bulletPos = Serializer::deserializePos(recvbuf);
+
+				bullets[bulletID]->setPos(bulletPos);
+				bullets[bulletID]->setOnOff(true);
+			}
+			else if (packetType == STOP_PEW)
+			{
+				int bulletID = Serializer::deserializeInt(recvbuf);
+				bullets[bulletID]->setOnOff(false);
+			}
+
 		}
 		else if (iResult == 0)
 		{
@@ -153,6 +177,7 @@ int main(int argc, char* args[])
 			//uint8_t* mouseButtonState = (uint8_t*)SDL_GetMouseState(NULL);
 
 			int mouseX = 0, mouseY = 0;
+			bool leftClick = false, bulletSpwnd = false;
 			float difX, difY, magnitude;
 			const float PI = 3.14159265;
 			float velocityX, velocityY;
@@ -160,10 +185,11 @@ int main(int argc, char* args[])
 
 			SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
 
-			float blltPosX = 0.f, blltPosY = 0.f;
-
-			txtr->loadImage(renderer, "groundtx.png");
+			playerTex->loadImage(renderer, "groundtx.png");
 			addPlayer(0);
+
+			bulletTex->loadImage(renderer, "bullet.png");
+			initBulletList(100);
 
 			std::thread commThread(handleComms);
 			commThread.detach();
@@ -181,8 +207,18 @@ int main(int argc, char* args[])
 					if (sdlEvent.type == SDL_MOUSEMOTION)
 						SDL_GetMouseState(&mouseX, &mouseY);
 
-				//	if (sdlEvent.type == SDL_MOUSEBUTTONDOWN || sdlEvent.type == SDL_MOUSEBUTTONUP)
-				//		//mouseButtonState = (uint8_t*)SDL_GetMouseState(NULL);
+					if (sdlEvent.type == SDL_MOUSEBUTTONDOWN)
+					{
+						if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT))
+							leftClick = true;
+					}
+					if (sdlEvent.type == SDL_MOUSEBUTTONUP)
+					{
+						if (!(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)))
+						leftClick = false;
+						bulletSpwnd = false;
+					}
+							
 				}
 
 				keysInfo.w = 0;
@@ -201,47 +237,53 @@ int main(int argc, char* args[])
 					keysInfo.s = 1;
 				if (keyState[SDL_SCANCODE_D])
 					keysInfo.d = 1;
-				//if (mouseButtonState[SDL_BUTTON_LEFT])
-				//{
-				//	//bullets.spawnBullet(posX, posY);
-				//	difX = mouseX - posX;
-				//	difY = mouseY - posY;
-				//	magnitude = sqrt(difX*difX + difY*difY);
-				//	velocityX = difX / magnitude;
-				//	velocityY = difY / magnitude;
+		
 
 				float angle = std::atan2(((double)mouseY - (players[playerNumber]->getPosition().y + players[playerNumber]->getOrigin().y)), ((double)mouseX - (players[playerNumber]->getPosition().x + players[playerNumber]->getOrigin().x)));
 				angle *= (180 / PI);
-				while (angle < 0)
+				if(angle < 0)
 				{
 					angle += 360;
 				}
-
-				//}
-
-				/*iResult = connection.sendPosRot(sprt.getPosition(), sprt.getRotation());
-				if (iResult != 0)
+				else if (angle > 360)
 				{
-					printf("Failed to send position to server!\n");
-				}*/
-
+					angle -= 360;
+				}
 
 				iResult = connection.sendKeyStates(keysInfo, angle);
-
 				if (iResult != 0)
 				{
 					printf("Failed to send key states to server!\n");
 				}
 
-				//connection.listenServer();
+
+				if (leftClick == true && bulletSpwnd == false)
+				{
+					bulletSpwnd = true;
+
+					iResult = connection.sendShootCmd();
+					if (iResult != 0)
+					{
+						printf("Failed to send shoot command to server!\n");
+					}
+				}
 
 				//Clear screen
 				SDL_RenderClear(renderer);
 
-				//Render sprite to screen
+				//Render players to screen
 				for (std::map<int, Sprite*>::iterator it = players.begin(); it != players.end(); it++)
 				{
 					(*it).second->draw(renderer);
+				}
+
+				//Render bullets to screen
+				for (std::map<int, Bullet*>::iterator it = bullets.begin(); it != bullets.end(); it++)
+				{
+					if ((*it).second->isOn())
+					{
+						(*it).second->draw(renderer);
+					}
 				}
 
 				//Update screen
@@ -269,7 +311,6 @@ bool initializeSDL()
 	}
 	return true;
 }
-
 
 SDL_Window* createWindow(std::string windowTitle, int width, int height)
 {

@@ -1,9 +1,9 @@
 #include "Bullet.h"
 
 
-Bullet::Bullet(Texture* bulletTex)
+Bullet::Bullet(int id, Texture* bulletTex)
 {
-	initializeBullet(bulletTex);
+	initializeBullet(id, bulletTex);
 }
 
 
@@ -25,7 +25,7 @@ void Bullet::setPos(SDL_Point pos)
 
 //private
 
-void Bullet::initializeBullet(Texture* bulletTex)
+void Bullet::initializeBullet(int id, Texture* bulletTex)
 {
 	bulletOn = false;
 	SDL_Rect boundsRectangle;
@@ -33,7 +33,7 @@ void Bullet::initializeBullet(Texture* bulletTex)
 	boundsRectangle.y = 0.f;
 	boundsRectangle.w = 4;
 	boundsRectangle.h = 4;
-	updateID = -1;
+	updateID = id;
 	
 	bulletSprite.setTexture(*bulletTex);
 	bulletSprite.setBounds(boundsRectangle);

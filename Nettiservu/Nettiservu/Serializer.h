@@ -6,7 +6,7 @@
 #include "KeysInfo.h"
 #include "Vec2.h"
 
-enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID, KEYS };
+enum PACKET_TYPE{ NOTYPE = -1, POSROT, CLIENT_ID, KEYS, PEWPEW, STOP_PEW };
 
 class Serializer
 {

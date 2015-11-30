@@ -116,6 +116,11 @@ int Connection::sendShootCmd()
 	int iResult;
 
 	std::string serializedPacketType;
+	Serializer::serializePacketType(PEWPEW, &serializedPacketType);
+
+	iResult = sendData(&serializedPacketType);
+	if (iResult != 0)
+		return 1;
 
 	return 0;
 }
