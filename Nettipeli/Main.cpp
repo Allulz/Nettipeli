@@ -17,7 +17,7 @@ SDL_Renderer* renderer;
 Connection connection;
 std::map<int, Sprite*> players;
 std::map<int, Bullet*> bullets;
-int playerNumber;
+int playerNumber = -1;
 Texture* playerTex = new Texture;
 Texture* bulletTex = new Texture;
 
@@ -196,98 +196,101 @@ int main(int argc, char* args[])
 
 			while (!quitProgram)
 			{
-				while (SDL_PollEvent(&sdlEvent) != 0)
+				if (players.size() > playerNumber)
 				{
-					if (sdlEvent.type == SDL_QUIT)
+					while (SDL_PollEvent(&sdlEvent) != 0)
+					{
+						if (sdlEvent.type == SDL_QUIT)
+							quitProgram = true;
+
+						if (sdlEvent.type == SDL_KEYDOWN || sdlEvent.type == SDL_KEYUP)
+							keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
+
+						if (sdlEvent.type == SDL_MOUSEMOTION)
+							SDL_GetMouseState(&mouseX, &mouseY);
+
+						if (sdlEvent.type == SDL_MOUSEBUTTONDOWN)
+						{
+							if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT))
+								leftClick = true;
+						}
+						if (sdlEvent.type == SDL_MOUSEBUTTONUP)
+						{
+							if (!(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)))
+								leftClick = false;
+							bulletSpwnd = false;
+						}
+
+					}
+
+					keysInfo.w = 0;
+					keysInfo.a = 0;
+					keysInfo.s = 0;
+					keysInfo.d = 0;
+
+					if (keyState[SDL_SCANCODE_ESCAPE])
 						quitProgram = true;
 
-					if (sdlEvent.type == SDL_KEYDOWN || sdlEvent.type == SDL_KEYUP)
-						keyState = (uint8_t*)SDL_GetKeyboardState(NULL);
+					if (keyState[SDL_SCANCODE_W])
+						keysInfo.w = 1;
+					if (keyState[SDL_SCANCODE_A])
+						keysInfo.a = 1;
+					if (keyState[SDL_SCANCODE_S])
+						keysInfo.s = 1;
+					if (keyState[SDL_SCANCODE_D])
+						keysInfo.d = 1;
 
-					if (sdlEvent.type == SDL_MOUSEMOTION)
-						SDL_GetMouseState(&mouseX, &mouseY);
 
-					if (sdlEvent.type == SDL_MOUSEBUTTONDOWN)
+					float angle = std::atan2(((double)mouseY - (players[playerNumber]->getPosition().y + players[playerNumber]->getOrigin().y)), ((double)mouseX - (players[playerNumber]->getPosition().x + players[playerNumber]->getOrigin().x)));
+					angle *= (180 / PI);
+					if (angle < 0)
 					{
-						if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT))
-							leftClick = true;
+						angle += 360;
 					}
-					if (sdlEvent.type == SDL_MOUSEBUTTONUP)
+					else if (angle > 360)
 					{
-						if (!(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)))
-						leftClick = false;
-						bulletSpwnd = false;
+						angle -= 360;
 					}
-							
-				}
 
-				keysInfo.w = 0;
-				keysInfo.a = 0;
-				keysInfo.s = 0;
-				keysInfo.d = 0;
-
-				if (keyState[SDL_SCANCODE_ESCAPE])
-					quitProgram = true;
-
-				if (keyState[SDL_SCANCODE_W])
-					keysInfo.w = 1;
-				if (keyState[SDL_SCANCODE_A])
-					keysInfo.a = 1;
-				if (keyState[SDL_SCANCODE_S])
-					keysInfo.s = 1;
-				if (keyState[SDL_SCANCODE_D])
-					keysInfo.d = 1;
-		
-
-				float angle = std::atan2(((double)mouseY - (players[playerNumber]->getPosition().y + players[playerNumber]->getOrigin().y)), ((double)mouseX - (players[playerNumber]->getPosition().x + players[playerNumber]->getOrigin().x)));
-				angle *= (180 / PI);
-				if(angle < 0)
-				{
-					angle += 360;
-				}
-				else if (angle > 360)
-				{
-					angle -= 360;
-				}
-
-				iResult = connection.sendKeyStates(keysInfo, angle);
-				if (iResult != 0)
-				{
-					printf("Failed to send key states to server!\n");
-				}
-
-
-				if (leftClick == true && bulletSpwnd == false)
-				{
-					bulletSpwnd = true;
-
-					iResult = connection.sendShootCmd();
+					iResult = connection.sendKeyStates(keysInfo, angle);
 					if (iResult != 0)
 					{
-						printf("Failed to send shoot command to server!\n");
+						printf("Failed to send key states to server!\n");
 					}
-				}
 
-				//Clear screen
-				SDL_RenderClear(renderer);
 
-				//Render players to screen
-				for (std::map<int, Sprite*>::iterator it = players.begin(); it != players.end(); it++)
-				{
-					(*it).second->draw(renderer);
-				}
+					if (leftClick == true && bulletSpwnd == false)
+					{
+						bulletSpwnd = true;
 
-				//Render bullets to screen
-				for (std::map<int, Bullet*>::iterator it = bullets.begin(); it != bullets.end(); it++)
-				{
-					if ((*it).second->isOn())
+						iResult = connection.sendShootCmd();
+						if (iResult != 0)
+						{
+							printf("Failed to send shoot command to server!\n");
+						}
+					}
+
+					//Clear screen
+					SDL_RenderClear(renderer);
+
+					//Render players to screen
+					for (std::map<int, Sprite*>::iterator it = players.begin(); it != players.end(); it++)
 					{
 						(*it).second->draw(renderer);
 					}
-				}
 
-				//Update screen
-				SDL_RenderPresent(renderer);
+					//Render bullets to screen
+					for (std::map<int, Bullet*>::iterator it = bullets.begin(); it != bullets.end(); it++)
+					{
+						if ((*it).second->isOn())
+						{
+							(*it).second->draw(renderer);
+						}
+					}
+
+					//Update screen
+					SDL_RenderPresent(renderer);
+				}
 			}
 		}
 	}
