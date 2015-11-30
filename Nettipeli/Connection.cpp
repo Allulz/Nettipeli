@@ -111,6 +111,15 @@ int Connection::sendKeyStates(KEYS_INFO keysInfo, float rotToSend)
 	return 0;
 }
 
+int Connection::sendShootCmd()
+{
+	int iResult;
+
+	std::string serializedPacketType;
+
+	return 0;
+}
+
 int Connection::sendData(std::string* dataToSend)
 {
 	int	iResult = send(connectSocket, dataToSend->c_str(), (int)dataToSend->length(), 0);

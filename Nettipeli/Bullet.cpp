@@ -1,9 +1,9 @@
 #include "Bullet.h"
 
 
-Bullet::Bullet(int on)
+Bullet::Bullet(Texture* bulletTex)
 {
-	on = 0;
+	initializeBullet(bulletTex);
 }
 
 
@@ -12,34 +12,30 @@ Bullet::~Bullet()
 }
 
 
-void Bullet::initializeBullet(Bullet *bullet, int id)
+void Bullet::draw(SDL_Renderer* renderer)
 {
-
-	if (bullet->on = 1)
-	{
-		bullet->bllttxtr.loadImage(renderer, "bullet.png");
-		bullet->blltsprt.setTexture(bllttxtr);
-		dRect.x = blltposX;
-		dRect.y = blltposY;
-		dRect.w = bulletW;
-		dRect.h = bulletH;
-
-	}
-
-	else
-		;
+	bulletSprite.draw(renderer);
 }
 
-void Bullet::shoot()
+void Bullet::setPos(SDL_Point pos)
 {
-
-
+	bulletSprite.setPosition(pos);
 }
 
-//SDL_Point Bullet::spawnBullet()
-//{
-//	
-//
-//
-//}
 
+//private
+
+void Bullet::initializeBullet(Texture* bulletTex)
+{
+	bulletOn = false;
+	SDL_Rect boundsRectangle;
+	boundsRectangle.x = 0.f;
+	boundsRectangle.y = 0.f;
+	boundsRectangle.w = 4;
+	boundsRectangle.h = 4;
+	updateID = -1;
+	
+	bulletSprite.setTexture(*bulletTex);
+	bulletSprite.setBounds(boundsRectangle);
+	bulletSprite.setOrigin(0.5f*boundsRectangle.w, 0.5f*boundsRectangle.y);
+}

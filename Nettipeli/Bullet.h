@@ -6,25 +6,18 @@
 class Bullet
 {
 public:
-	Bullet(int on);
+	Bullet(Texture* bulletTexture);
 	~Bullet();
 
-	void initializeBullet(Bullet *bullet, int id);
-	void shoot();
-	//SDL_Point spawnBullet();
-	
-
-	float blltposX, blltposY, magnitude;
-	int speed = 1;
-	int id;
-	float bulletW, bulletH;
-	Sprite blltsprt;
-	int on;
-	Texture bllttxtr;
+	void draw(SDL_Renderer* renderer);
+	void setPos(SDL_Point pos);
+	void setOnOff(bool onOff){ bulletOn = onOff; }
 
 private:
+	void initializeBullet(Texture* bulletTexture);
 
-	SDL_Rect dRect;
-	SDL_Renderer *renderer;
+	Sprite bulletSprite;
+	bool bulletOn;
+	int updateID;
 };
 
